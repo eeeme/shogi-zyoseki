@@ -6,6 +6,7 @@ import {
 } from '../book/book'
 import { Board } from './Board'
 import { TreeView } from './TreeView'
+import { Pager } from './Pager'
 import { exportKif } from '../kifu/export'
 
 interface Props {
@@ -23,7 +24,6 @@ interface Props {
 export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, toast }: Props) {
   const [edit, setEdit] = useState(false)
   const [flipped, setFlipped] = useState(false)
-  const [view, setView] = useState<'tree' | 'line'>('tree')
 
   const node = book.nodes[nodeId] ?? book.nodes[book.rootId]
   const { pos, prevTo } = useMemo(() => positionAt(book, node.id), [book, node.id, rev])
@@ -85,7 +85,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
   }
 
   return (
-    <div className="screen">
+    <div className="screen fit">
       <header className="bar">
         <button className="btn ghost" onClick={onBack}>‹ 一覧</button>
         <h1
@@ -114,77 +114,70 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <button className="btn" onClick={goLeaf} aria-label="本線の最後へ">⏭</button>
       </div>
 
-      <section className="panel">
-        <div className="panel-head">
-          <span>次の手 {children.length > 1 && <em className="fork">分岐 {children.length}</em>}</span>
-          <div className="row gap">
-            <button className={`chip ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)}>盤反転</button>
-            <button className={`chip ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)}>編集</button>
+      <Pager labels={['次の手', 'ツリー', '手順']} storageKey="zyoseki.explorePage">
+        <div className="page-body">
+          <div className="panel-head">
+            <span>次の手 {children.length > 1 && <em className="fork">分岐 {children.length}</em>}</span>
+            <div className="row gap">
+              <button className={`chip ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)}>盤反転</button>
+              <button className={`chip ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)}>編集</button>
+            </div>
           </div>
-        </div>
-        {children.length === 0 && <p className="muted">この先の手はまだありません{edit ? '。盤で指すと追加されます。' : '。'}</p>}
-        <div className="choices">
-          {children.map((c, i) => (
-            <button key={c.id} className={`choice ${i === 0 ? 'main' : ''}`} onClick={() => setNodeId(c.id)}>
-              {c.label}
-              {i === 0 && children.length > 1 && <small>本線</small>}
-            </button>
-          ))}
-        </div>
-        {transposed.length > 0 && (
-          <p className="note">
-            ⇄ この局面は別の手順でも出てきます（{transposed.length}箇所）
-            <button className="link" onClick={() => setNodeId(transposed[0])}>移動</button>
-          </p>
-        )}
-        {node.move && edit && (
-          <div className="row gap wrap">
-            {book.nodes[node.parent!].children[0] !== node.id && (
-              <button className="btn" onClick={() => { promoteToMain(book, node.id); onChange() }}>この手を本線にする</button>
-            )}
-            <button
-              className="btn danger"
-              onClick={() => {
-                if (!confirm('この手以降をすべて削除しますか？')) return
-                const p = node.parent!
-                deleteSubtree(book, node.id)
+          {children.length === 0 && <p className="muted">この先の手はまだありません{edit ? '。盤で指すと追加されます。' : '。'}</p>}
+          <div className="choices">
+            {children.map((c, i) => (
+              <button key={c.id} className={`choice ${i === 0 ? 'main' : ''}`} onClick={() => setNodeId(c.id)}>
+                {c.label}
+                {i === 0 && children.length > 1 && <small>本線</small>}
+              </button>
+            ))}
+          </div>
+          {transposed.length > 0 && (
+            <p className="note">
+              ⇄ この局面は別の手順でも出てきます（{transposed.length}箇所）
+              <button className="link" onClick={() => setNodeId(transposed[0])}>移動</button>
+            </p>
+          )}
+          {node.move && edit && (
+            <div className="row gap wrap">
+              {book.nodes[node.parent!].children[0] !== node.id && (
+                <button className="btn" onClick={() => { promoteToMain(book, node.id); onChange() }}>この手を本線にする</button>
+              )}
+              <button
+                className="btn danger"
+                onClick={() => {
+                  if (!confirm('この手以降をすべて削除しますか？')) return
+                  const p = node.parent!
+                  deleteSubtree(book, node.id)
+                  onChange()
+                  setNodeId(p)
+                }}
+              >この手以降を削除</button>
+            </div>
+          )}
+          <textarea
+            key={node.id}
+            className="comment"
+            placeholder={edit ? 'メモ（狙い・注意点など）' : 'メモなし'}
+            defaultValue={node.comment ?? ''}
+            readOnly={!edit}
+            rows={node.comment || edit ? 3 : 1}
+            onBlur={(e) => {
+              const v = e.target.value.trim()
+              if ((node.comment ?? '') !== v) {
+                node.comment = v || undefined
                 onChange()
-                setNodeId(p)
-              }}
-            >この手以降を削除</button>
-          </div>
-        )}
-        <textarea
-          key={node.id}
-          className="comment"
-          placeholder={edit ? 'メモ（狙い・注意点など）' : 'メモなし'}
-          defaultValue={node.comment ?? ''}
-          readOnly={!edit}
-          rows={node.comment || edit ? 3 : 1}
-          onBlur={(e) => {
-            const v = e.target.value.trim()
-            if ((node.comment ?? '') !== v) {
-              node.comment = v || undefined
-              onChange()
-            }
-          }}
-        />
-      </section>
-
-      <section className="panel">
-        <div className="panel-head">
-          <div className="tabs">
-            <button className={view === 'tree' ? 'on' : ''} onClick={() => setView('tree')}>ツリー</button>
-            <button className={view === 'line' ? 'on' : ''} onClick={() => setView('line')}>手順</button>
-          </div>
-          <div className="row gap">
-            <button className="chip" onClick={onImport}>取込</button>
-            <button className="chip" onClick={download}>KIF書出</button>
-          </div>
+              }
+            }}
+          />
         </div>
-        {view === 'tree' ? (
+
+        <div className="page-body page-tree">
           <TreeView book={book} rev={rev} currentId={node.id} onSelect={setNodeId} />
-        ) : (
+          <p className="legend muted"><i className="lg due">●</i>要復習 <i className="lg learning">●</i>学習中 <i className="lg good">●</i>定着　＊メモ　⇄合流</p>
+        </div>
+
+        <div className="page-body">
           <p className="line">
             {pathLabels.length === 0 && <span className="muted">開始局面</span>}
             {pathLabels.map((p) => (
@@ -193,9 +186,12 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
               </button>
             ))}
           </p>
-        )}
-        <p className="legend muted"><i className="lg due">●</i>要復習 <i className="lg learning">●</i>学習中 <i className="lg good">●</i>定着　＊メモ　⇄合流</p>
-      </section>
+          <div className="row gap">
+            <button className="chip" onClick={onImport}>棋譜を取込</button>
+            <button className="chip" onClick={download}>KIF書出</button>
+          </div>
+        </div>
+      </Pager>
     </div>
   )
 }

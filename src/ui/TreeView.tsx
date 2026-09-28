@@ -21,11 +21,11 @@ interface LNode {
   transposed: boolean
 }
 
-const W = 84
+const W = 78
 const H = 28
-const CX = 96 // 列の間隔
+const CX = 86 // 列の間隔
 const RY = 40 // 行（手数）の間隔
-const PAD = 12
+const PAD = 8
 
 /** 縦方向（手数）に伸び、分岐は右の列へフォークする定跡フローチャート */
 export function TreeView({ book, currentId, rev, onSelect }: Props) {
@@ -73,8 +73,11 @@ export function TreeView({ book, currentId, rev, onSelect }: Props) {
     const n = byId.get(currentId)
     const el = boxRef.current
     if (!n || !el) return
-    const x = cx(n.col) - el.clientWidth / 2
+    // 縦は中央へ。横は見えていない時だけ動かす（左端にいればページのスワイプがそのまま効く）
     const y = cy(n.row) - el.clientHeight / 2
+    const nx = cx(n.col)
+    const visible = nx - W / 2 >= el.scrollLeft && nx + W / 2 <= el.scrollLeft + el.clientWidth
+    const x = visible ? el.scrollLeft : nx - el.clientWidth / 2
     el.scrollTo({ left: Math.max(0, x), top: Math.max(0, y), behavior: 'smooth' })
   }, [currentId, byId])
 

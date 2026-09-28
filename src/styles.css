@@ -12,7 +12,7 @@
   --good: #7fb38a;
   --warn: #d4a14a;
   --bad: #d0675f;
-  --cell: calc(min(100vw - 40px, 432px) / 9);
+  --cell: min(calc((100vw - 40px) / 9), calc((100dvh - 470px) / 9), 48px);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -111,7 +111,7 @@ button { cursor: pointer; }
 .tabs button.on { color: var(--text); border-color: var(--accent); }
 
 /* ツリー */
-.tree-box { overflow: auto; max-height: 360px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); -webkit-overflow-scrolling: touch; }
+.tree-box { overflow: auto; max-height: 360px; overscroll-behavior: auto; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); -webkit-overflow-scrolling: touch; }
 .tree-svg { display: block; }
 .tree-edge { fill: none; stroke: var(--line-strong); stroke-width: 1.25; }
 .tree-edge.on { stroke: var(--accent); stroke-width: 1.75; }
@@ -162,3 +162,21 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .msg.bad { color: var(--bad); }
 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--surface-2); border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 12px; font-size: 13px; max-width: calc(100vw - 32px); z-index: 20; }
+
+/* 閲覧画面：1画面に収め、盤の下を横スワイプで切り替える */
+.screen.fit { height: 100dvh; overflow: hidden; padding-bottom: calc(8px + env(safe-area-inset-bottom)); gap: 8px; }
+.screen.fit .nav .btn { min-height: 40px; }
+.pager { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.pager-dots { display: flex; justify-content: center; gap: 18px; padding: 8px 0 6px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); flex: none; }
+.pager-dots span { position: relative; padding-bottom: 4px; cursor: pointer; }
+.pager-dots span.on { color: var(--text); }
+.pager-dots span.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); border-radius: 1px; }
+.pager-track { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.pager-track::-webkit-scrollbar { display: none; }
+.pager-page { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; overflow-y: auto; overscroll-behavior-y: contain; }
+.page-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
+.page-tree { padding: 8px; gap: 6px; height: 100%; }
+.page-tree .tree-box { flex: 1; max-height: none; min-height: 0; }
+/* ツリーは縦だけ指でスクロール。横スワイプはページ切替に渡し、横位置は選択中の手に自動で追従 */
+.page-tree .tree-box { overflow-x: hidden; overflow-y: auto; }
+.tree-node text { font-size: 12px; }
