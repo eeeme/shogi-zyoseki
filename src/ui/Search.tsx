@@ -17,8 +17,8 @@ interface Props {
 export function Search({ books, sfen, exclude, onOpen, onEditQuery, onBack }: Props) {
   const { exact, similar } = useMemo(() => {
     const r = searchPositions(books, parseSfen(sfen))
-    // 検索元の局面そのものは結果から外す
-    const keep = (h: Hit) => !(exclude && h.bookId === exclude.bookId && h.nodeId === exclude.nodeId)
+    // 検索元の棋譜は結果に出さない
+    const keep = (h: Hit) => !(exclude && h.bookId === exclude.bookId)
     return { exact: r.exact.filter(keep), similar: r.similar.filter(keep) }
   }, [books, sfen, exclude])
 
