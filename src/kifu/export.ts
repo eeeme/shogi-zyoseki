@@ -16,10 +16,12 @@ function kifMove(pos: Pos, usi: string, prevTo: number | null): string {
 export function exportKif(book: Book): string {
   const out: string[] = [
     '# KIF形式棋譜ファイル',
-    `棋戦：${book.name}`,
+    ...(book.meta?.event ? [] : [`棋戦：${book.name}`]),
     ...(isStartSfen(book.rootSfen) ? ['手合割：平手'] : toBod(book.rootSfen)),
-    '先手：',
-    '後手：',
+    ...(book.meta?.date ? [`開始日時：${book.meta.date}`] : []),
+    ...(book.meta?.event ? [`棋戦：${book.meta.event}`] : []),
+    `先手：${book.meta?.sente ?? ''}`,
+    `後手：${book.meta?.gote ?? ''}`,
     '手数----指手---------消費時間--',
   ]
   const commentLines = (c?: string) => (c ? c.split('\n').map((l) => `*${l}`) : [])

@@ -4,7 +4,7 @@ import {
   type HandType, type PType, PROMOTE,
 } from '../shogi/core'
 import { parseJaMove } from '../shogi/notation'
-import type { ImportNode, ImportTree } from '../book/book'
+import type { GameMeta, ImportNode, ImportTree } from '../book/book'
 import { hasBod, parseBod } from './bod'
 
 export type KifuFormat = 'KIF' | 'KI2' | 'CSA' | 'USI'
@@ -75,8 +75,25 @@ export function parseJapanese(text: string): ImportTree {
     if (t && !title) title = t[2].trim()
   }
   const rootSfen = withBoard ? parseBod(text) : START_SFEN
+  const meta: GameMeta = {}
+  for (const l of lines) {
+    const m = /^(先手|下手|後手|上手|開始日時|対局日|棋戦)[：:](.*)$/.exec(l.trim())
+    if (!m || !m[2].trim()) continue
+    const v = m[2].trim()
+    if (m[1] === '先手' || m[1] === '下手') meta.sente ??= v
+    else if (m[1] === '後手' || m[1] === '上手') meta.gote ??= v
+    else if (m[1] === '棋戦') meta.event ??= v
+    else meta.date ??= v
+  }
+  const rootTurn = rootSfen.split(' ')[1] === 'w' ? 1 : 0
   const b = builder(rootSfen)
   let ended = false
+  let inVariation = false
+  const setResultByResign = (ply: number) => {
+    // ply 手目に投了した側（その手番）が負け
+    const loser = (rootTurn + ply - 1) % 2
+    meta.result ??= loser === 0 ? '後手勝ち' : '先手勝ち'
+  }
   for (const raw of lines) {
     const line = raw.trim().replace(/同[\s　]+/g, '同')
     if (!line) continue
@@ -84,8 +101,12 @@ export function parseJapanese(text: string): ImportTree {
     if (v) {
       b.backTo(Number(v[1]))
       ended = false
+      inVariation = true
       continue
     }
+    const r = /^まで\d+手で(先手|後手|下手|上手)の(反則)?勝ち/.exec(line)
+    if (r && !inVariation) { meta.result = r[1] === '先手' || r[1] === '下手' ? '先手勝ち' : '後手勝ち'; ended = true; continue }
+    if (/^まで\d+手で(千日手|持将棋)/.test(line) && !inVariation) { meta.result = '引き分け'; ended = true; continue }
     if (line.startsWith('*')) {
       const c = line.slice(1).trim()
       if (c) b.comment(c)
@@ -97,7 +118,12 @@ export function parseJapanese(text: string): ImportTree {
     const k = /^(\d+)\s+(\S+)/.exec(line)
     if (k) {
       const mv = k[2].replace(/\(\s*\d+:\d+.*$/, '')
-      if (END_WORDS.test(mv)) { ended = true; continue }
+      if (END_WORDS.test(mv)) {
+        if (!inVariation && /^投了/.test(mv)) setResultByResign(Number(k[1]))
+        if (!inVariation && /^(千日手|持将棋)/.test(mv)) meta.result ??= '引き分け'
+        ended = true
+        continue
+      }
       if (Number(k[1]) !== b.cur.ply + 1) throw new Error(`手数が連続していません: ${line}`)
       const m = parseJaMove(b.cur.pos, mv, b.cur.prevTo)
       b.play(m, mv)
@@ -114,7 +140,7 @@ export function parseJapanese(text: string): ImportTree {
     }
     if (END_WORDS.test(line)) ended = true
   }
-  return { rootSfen, root: b.root, title }
+  return { rootSfen, root: b.root, title, meta: Object.keys(meta).length ? meta : undefined }
 }
 
 // ---------- CSA ----------
@@ -127,13 +153,20 @@ export function parseCsa(text: string): ImportTree {
   const stmts = text.replace(/\r\n?/g, '\n').split('\n').flatMap((l) => (l.startsWith("'") ? [l] : l.split(',')))
   const b = builder(START_SFEN)
   let title: string | undefined
+  const meta: GameMeta = {}
   for (const raw of stmts) {
     const s = raw.trim()
     if (!s) continue
+    if (s.startsWith('N+')) { meta.sente = s.slice(2); continue }
+    if (s.startsWith('N-')) { meta.gote = s.slice(2); continue }
+    if (s.startsWith('$START_TIME:')) { meta.date = s.slice(12); continue }
+    if (s === '%TORYO') { meta.result = b.cur.pos.turn === 0 ? '後手勝ち' : '先手勝ち'; break }
+    if (s === '%KACHI') { meta.result = b.cur.pos.turn === 0 ? '先手勝ち' : '後手勝ち'; break }
+    if (s === '%SENNICHITE' || s === '%JISHOGI') { meta.result = '引き分け'; break }
     if (s.startsWith("'*")) { const c = s.slice(2).trim(); if (c) b.comment(c); continue }
     if (s.startsWith("'")) continue
     if (/^P[1-9]/.test(s) || /^P[+-]/.test(s)) throw new Error('途中局面からのCSAにはまだ対応していません')
-    if (s.startsWith('$EVENT:')) { title = s.slice(7); continue }
+    if (s.startsWith('$EVENT:')) { title = s.slice(7); meta.event = title; continue }
     if (s.startsWith('%')) break
     const m = /^([+-])(\d)(\d)(\d)(\d)([A-Z]{2})/.exec(s)
     if (!m) continue
@@ -152,7 +185,7 @@ export function parseCsa(text: string): ImportTree {
     }
     b.play(mv, s)
   }
-  return { rootSfen: START_SFEN, root: b.root, title }
+  return { rootSfen: START_SFEN, root: b.root, title, meta: Object.keys(meta).length ? meta : undefined }
 }
 
 // ---------- USI / SFEN ----------

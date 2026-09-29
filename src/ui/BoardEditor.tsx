@@ -20,12 +20,14 @@ interface Props {
   onCreate: (name: string, sfen: string) => void
   onBack: () => void
   toast: (s: string) => void
+  /** 検索用：名前欄を出さず、ボタンを「検索」にする */
+  forSearch?: boolean
 }
 
 const emptyPos = () => parseSfen('9/9/9/9/9/9/9/9/9 b -')
 
 /** 盤面編集：駒箱から自由に並べて、その局面から新しい本を作る */
-export function BoardEditor({ initialSfen, onCreate, onBack, toast }: Props) {
+export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }: Props) {
   const [pos, setPos] = useState<Pos>(() => parseSfen(initialSfen ?? START_SFEN))
   const [sel, setSel] = useState<Sel>(null)
   const [color, setColor] = useState<Color>(0)
@@ -144,7 +146,7 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast }: Props) {
   }
 
   const create = () => {
-    const err = validate()
+    const err = forSearch ? null : validate()
     if (err) return toast(err)
     onCreate(name.trim() || '自由配置の局面', toSfen(pos))
   }
@@ -157,8 +159,8 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast }: Props) {
     <div className="screen">
       <header className="bar">
         <button className="btn ghost" onClick={onBack}>‹ 戻る</button>
-        <h1 className="bar-title">盤面編集</h1>
-        <button className="btn primary" onClick={create}>作成</button>
+        <h1 className="bar-title">{forSearch ? '局面検索' : '盤面編集'}</h1>
+        <button className="btn primary" onClick={create}>{forSearch ? '検索' : '作成'}</button>
       </header>
 
       <Board
@@ -230,7 +232,7 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast }: Props) {
             }}
           >後手玉だけ残す</button>
         </div>
-        <input placeholder="名前" value={name} onChange={(e) => setName(e.target.value)} />
+        {!forSearch && <input placeholder="名前" value={name} onChange={(e) => setName(e.target.value)} />}
       </section>
     </div>
   )

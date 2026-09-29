@@ -12,13 +12,16 @@ import { Import } from './ui/Import'
 import { BoardEditor } from './ui/BoardEditor'
 import { ActionSheet, type SheetItem } from './ui/ActionSheet'
 import { Review } from './ui/Review'
+import { Search } from './ui/Search'
+import { MetaSheet, TagSheet, metaLine } from './ui/Forms'
 
 type Screen =
   | { kind: 'home' }
   | { kind: 'explore'; bookId: string; nodeId: string }
   | { kind: 'drill'; bookId: string; nodeId: string }
   | { kind: 'import'; target?: string; back: Screen }
-  | { kind: 'editor'; sfen?: string; back: Screen }
+  | { kind: 'editor'; sfen?: string; back: Screen; forSearch?: boolean }
+  | { kind: 'search'; sfen: string; back: Screen }
   | { kind: 'review'; items: DueItem[] }
 
 export default function App() {
@@ -74,6 +77,7 @@ export default function App() {
         onDrill={(nodeId) => setScreen({ kind: 'drill', bookId: book.id, nodeId })}
         onImport={() => setScreen({ kind: 'import', target: book.id, back: screen })}
         onEditPosition={(sfen) => setScreen({ kind: 'editor', sfen, back: screen })}
+        onSearch={(sfen) => setScreen({ kind: 'search', sfen, back: screen })}
         toast={toast}
       />
     )
@@ -101,13 +105,25 @@ export default function App() {
     )
   } else if (screen.kind === 'review') {
     body = <Review books={books} items={screen.items} onChange={touch} onBack={() => setScreen({ kind: 'home' })} />
+  } else if (screen.kind === 'search') {
+    body = (
+      <Search
+        books={books}
+        sfen={screen.sfen}
+        onOpen={(bookId, nodeId) => setScreen({ kind: 'explore', bookId, nodeId })}
+        onEditQuery={() => setScreen({ kind: 'editor', sfen: screen.sfen, back: screen.back, forSearch: true })}
+        onBack={() => setScreen(screen.back)}
+      />
+    )
   } else if (screen.kind === 'editor') {
     body = (
       <BoardEditor
         initialSfen={screen.sfen}
         toast={toast}
+        forSearch={screen.forSearch}
         onBack={() => setScreen(screen.back)}
         onCreate={(name, sfen) => {
+          if (screen.forSearch) return setScreen({ kind: 'search', sfen, back: screen.back })
           const folder = screen.back.kind === 'explore' ? bookOf(screen.back.bookId)?.folderId : inFolder
           const b = newBook(name, sfen, folder)
           touch(b)
@@ -132,6 +148,7 @@ export default function App() {
           setScreen({ kind: 'explore', bookId: b.id, nodeId: b.rootId })
         }}
         onEditor={() => setScreen({ kind: 'editor', back: { kind: 'home' } })}
+        onSearch={() => setScreen({ kind: 'editor', back: { kind: 'home' }, forSearch: true })}
         onReview={(items) => setScreen({ kind: 'review', items })}
         onImport={() => setScreen({ kind: 'import', back: { kind: 'home' } })}
         onChangeBook={touch}
@@ -184,6 +201,7 @@ interface HomeProps {
   onDrill: (b: Book) => void
   onNew: () => void
   onEditor: () => void
+  onSearch: () => void
   onReview: (items: DueItem[]) => void
   onImport: () => void
   onChangeBook: (b: Book) => void
@@ -196,8 +214,17 @@ interface HomeProps {
 function Home(p: HomeProps) {
   const { books, folders, folderId } = p
   const [sheet, setSheet] = useState<{ title: string; items: SheetItem[] } | null>(null)
+  const [form, setForm] = useState<{ kind: 'tags' | 'meta'; book: Book } | null>(null)
+  const [tag, setTag] = useState<string | null>(null)
   const folder = folders.find((f) => f.id === folderId) ?? null
-  const shown = books.filter((b) => (folder ? b.folderId === folder.id : !b.folderId || !folders.some((f) => f.id === b.folderId)))
+  const inView = books.filter((b) => (folder ? b.folderId === folder.id : true))
+  const allTags = [...new Set(books.flatMap((b) => b.tags ?? []))].sort((a, b) => a.localeCompare(b, 'ja'))
+  const viewTags = [...new Set(inView.flatMap((b) => b.tags ?? []))].sort((a, b) => a.localeCompare(b, 'ja'))
+  const activeTag = tag && viewTags.includes(tag) ? tag : null
+  // タグで絞り込み中は、一覧の直下でもフォルダをまたいで表示する
+  const shown = activeTag
+    ? inView.filter((b) => b.tags?.includes(activeTag))
+    : books.filter((b) => (folder ? b.folderId === folder.id : !b.folderId || !folders.some((f) => f.id === b.folderId)))
   // 一覧の直下では全部の本、フォルダ内ではそのフォルダの本が復習の対象
   const due = dueItems(folder ? shown : books)
 
@@ -211,6 +238,8 @@ function Home(p: HomeProps) {
           if (name?.trim()) { b.name = name.trim(); p.onChangeBook(b) }
         },
       },
+      { label: 'タグ', onClick: () => setForm({ kind: 'tags', book: b }) },
+      { label: '対局情報', onClick: () => setForm({ kind: 'meta', book: b }) },
       {
         label: 'フォルダへ移動',
         onClick: () => setSheet({
@@ -247,6 +276,9 @@ function Home(p: HomeProps) {
       ) : (
         <header className="hero">
           <h1>定跡帳</h1>
+          <button className="icon-btn search-btn" onClick={p.onSearch} aria-label="局面検索">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M15 15l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+          </button>
         </header>
       )}
 
@@ -268,7 +300,15 @@ function Home(p: HomeProps) {
         </button>
       )}
 
-      {!folder && folders.length > 0 && (
+      {viewTags.length > 0 && (
+        <div className="tag-list filter">
+          {viewTags.map((t) => (
+            <button key={t} className={`tag ${activeTag === t ? 'on' : ''}`} onClick={() => setTag(activeTag === t ? null : t)}>#{t}</button>
+          ))}
+        </div>
+      )}
+
+      {!folder && !activeTag && folders.length > 0 && (
         <ul className="books">
           {folders.map((f) => {
             const n = books.filter((b) => b.folderId === f.id).length
@@ -294,6 +334,8 @@ function Home(p: HomeProps) {
             <li key={b.id} className="book">
               <button className="book-main" onClick={() => p.onOpen(b)}>
                 <span className="book-name">{b.name}</span>
+                {metaLine(b.meta) && <span className="book-meta players">{metaLine(b.meta)}</span>}
+                {(b.tags?.length ?? 0) > 0 && <span className="book-tags">{b.tags!.map((t) => <i key={t}>#{t}</i>)}</span>}
                 <span className="book-meta">
                   {Object.keys(b.nodes).length - 1}手 ・ 定着 {s0.good + s1.good}/{s0.total + s1.total}
                   {bookDue > 0 && <em className="due"> ・ 復習 {bookDue}</em>}
@@ -309,6 +351,23 @@ function Home(p: HomeProps) {
       </ul>
       <footer className="foot muted">ME IS ME</footer>
       {sheet && <ActionSheet title={sheet.title} items={sheet.items} onClose={() => setSheet(null)} />}
+      {form?.kind === 'tags' && (
+        <TagSheet
+          title={form.book.name}
+          tags={form.book.tags ?? []}
+          allTags={allTags}
+          onSave={(tags) => { form.book.tags = tags.length ? tags : undefined; p.onChangeBook(form.book) }}
+          onClose={() => setForm(null)}
+        />
+      )}
+      {form?.kind === 'meta' && (
+        <MetaSheet
+          title={form.book.name}
+          meta={form.book.meta}
+          onSave={(m) => { form.book.meta = m; p.onChangeBook(form.book) }}
+          onClose={() => setForm(null)}
+        />
+      )}
     </div>
   )
 }

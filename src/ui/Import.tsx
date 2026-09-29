@@ -34,7 +34,9 @@ export function Import({ books, initialTarget, onCreate, onChange, onOpen, onBac
       const tree = parseKifu(text)
       if (mode === 'import') {
         if (target === 'new') {
-          const b = newBook(name.trim() || tree.title || '新しい定跡', tree.rootSfen)
+          const players = tree.meta?.sente || tree.meta?.gote ? `${tree.meta?.sente ?? '？'} 対 ${tree.meta?.gote ?? '？'}` : ''
+          const b = newBook(name.trim() || players || tree.title || '新しい定跡', tree.rootSfen)
+          b.meta = tree.meta
           const r = mergeImport(b, tree)
           onCreate(b)
           setResult({ ok: true, text: `${tree.format}形式を読み込み、新しい本に${r.added}手を追加しました。`, open: { book: b.id, node: b.rootId } })

@@ -25,10 +25,21 @@ export interface Folder {
   createdAt: number
 }
 
+/** 対局情報（棋譜のヘッダーから取り込む／手で編集） */
+export interface GameMeta {
+  sente?: string
+  gote?: string
+  date?: string
+  event?: string
+  result?: string // 先手勝ち / 後手勝ち / 引き分け など
+}
+
 export interface Book {
   id: string
   name: string
   folderId?: string // 未指定 = フォルダに入れない（一覧の直下）
+  tags?: string[]
+  meta?: GameMeta
   rootSfen: string
   rootId: string
   nodes: Record<string, BookNode>
@@ -125,6 +136,7 @@ export interface ImportTree {
   rootSfen: string
   root: ImportNode
   title?: string
+  meta?: GameMeta
 }
 
 export function mergeImport(book: Book, tree: ImportTree, atNode?: string): { added: number } {

@@ -7,6 +7,7 @@ import {
 import { Board } from './Board'
 import { TreeView } from './TreeView'
 import { Sheets, type SheetOpen } from './Sheets'
+import { metaLine } from './Forms'
 import { exportKif } from '../kifu/export'
 
 interface Props {
@@ -19,10 +20,11 @@ interface Props {
   onDrill: (fromNode: string) => void
   onImport: () => void
   onEditPosition: (sfen: string) => void
+  onSearch: (sfen: string) => void
   toast: (s: string) => void
 }
 
-export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, toast }: Props) {
+export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, onSearch, toast }: Props) {
   // 空の本は最初から編集モード
   const [edit, setEdit] = useState(() => book.nodes[book.rootId].children.length === 0)
   const [flipped, setFlipped] = useState(false)
@@ -100,6 +102,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         >{book.name}</h1>
         <button className="btn primary" onClick={() => onDrill(node.id)}>練習</button>
       </header>
+      {metaLine(book.meta) && <p className="meta-line">{metaLine(book.meta)}</p>}
 
       <div className="stage">
       <Board
@@ -117,6 +120,9 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <span className="nav-now">{node.move ? pathLabels.at(-1)?.label : '開始局面'}<small>{path.length - 1}手目</small></span>
         <button className="btn" onClick={goFirstChild} aria-label="本線で1手進む">▶</button>
         <button className="btn" onClick={goLeaf} aria-label="本線の最後へ">⏭</button>
+        <button className="icon-btn" onClick={() => onSearch(toSfen(pos))} aria-label="この局面を検索">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M15 15l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+        </button>
         <span className="nav-gap" />
         <button className={`icon-btn ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)} aria-label="編集" aria-pressed={edit}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>

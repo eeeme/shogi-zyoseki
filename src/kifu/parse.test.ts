@@ -119,3 +119,34 @@ describe('忘却曲線', () => {
     expect(dueItems([b], t0 + 2 * 86400000).map((x) => x.nodeId)).toEqual([first])
   })
 })
+
+describe('対局情報', () => {
+  it('KIFのヘッダーと「まで」行から対局者・日付・結果を読む', () => {
+    const t = parseKifu('開始日時：2026/09/01 10:00\n棋戦：将棋ウォーズ\n先手：めめ\n後手：相手\n手数----指手--\n   1 ７六歩(77)\n   2 ３四歩(33)\n   3 投了\nまで2手で後手の勝ち\n')
+    expect(t.meta).toEqual({ date: '2026/09/01 10:00', event: '将棋ウォーズ', sente: 'めめ', gote: '相手', result: '後手勝ち' })
+  })
+  it('「まで」行が無くても投了の手数から勝者を決める', () => {
+    const t = parseKifu('先手：A\n後手：B\n   1 ７六歩(77)\n   2 投了\n')
+    expect(t.meta?.result).toBe('先手勝ち')
+  })
+  it('CSAの対局者と投了', () => {
+    const t = parseKifu('N+A\nN-B\n$START_TIME:2026/01/02 09:00:00\nPI\n+\n+7776FU\n%TORYO')
+    expect(t.meta).toMatchObject({ sente: 'A', gote: 'B', result: '先手勝ち' })
+  })
+})
+
+describe('局面検索', () => {
+  it('一致と似た局面を返す', async () => {
+    const { searchPositions } = await import('../book/search')
+    const b = newBook('t')
+    mergeImport(b, parseKifu(SAMPLE_KIF))
+    let q = startPos()
+    for (const u of ['7g7f', '3c3d']) q = applyMove(q, usiToMove(u))
+    const r = searchPositions([b], q)
+    expect(r.exact.length).toBe(1)
+    expect(r.exact[0].ply).toBe(2)
+    expect(r.similar.length).toBeGreaterThan(0)
+    expect(r.similar[0].score).toBeLessThan(1)
+    expect(r.similar[0].score).toBeGreaterThan(0.9)
+  })
+})
