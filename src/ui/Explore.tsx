@@ -163,6 +163,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
       </div>
 
       <section className="panel next-panel">
+          <p className="panel-label">次の手</p>
           <div className="choices">
             {children.map((c, i) => (
               <button key={c.id} className={`choice ${i === 0 ? 'main' : ''}`} onClick={() => setNodeId(c.id)}>
