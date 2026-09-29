@@ -6,7 +6,7 @@ import {
 } from '../book/book'
 import { Board } from './Board'
 import { TreeView } from './TreeView'
-import { SideDrawer } from './SideDrawer'
+import { Sheets, type SheetOpen } from './Sheets'
 import { exportKif } from '../kifu/export'
 
 interface Props {
@@ -26,7 +26,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
   // 空の本は最初から編集モード
   const [edit, setEdit] = useState(() => book.nodes[book.rootId].children.length === 0)
   const [flipped, setFlipped] = useState(false)
-  const [drawer, setDrawer] = useState(false)
+  const [sheet, setSheet] = useState<SheetOpen>('none')
 
   const node = book.nodes[nodeId] ?? book.nodes[book.rootId]
   const { pos, prevTo } = useMemo(() => positionAt(book, node.id), [book, node.id, rev])
@@ -158,21 +158,6 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
               >この手以降を削除</button>
             </div>
           )}
-          {(edit || node.comment) && <textarea
-            key={node.id}
-            className="comment"
-            placeholder="メモ"
-            defaultValue={node.comment ?? ''}
-            readOnly={!edit}
-            rows={node.comment || edit ? 3 : 1}
-            onBlur={(e) => {
-              const v = e.target.value.trim()
-              if ((node.comment ?? '') !== v) {
-                node.comment = v || undefined
-                onChange()
-              }
-            }}
-          />}
       </section>
     </div>
   )
@@ -190,5 +175,28 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
     </div>
   )
 
-  return <SideDrawer open={drawer} onOpenChange={setDrawer} handleLabel="ツリー" area={screen}>{panel}</SideDrawer>
+  const memo = (
+    <div className="memo-body">
+      <div className="memo-grab" />
+      <div className="memo-head">
+        <span>メモ</span>
+        <small>{node.move ? pathLabels.at(-1)?.label : '開始局面'}　{path.length - 1}手目</small>
+      </div>
+      <textarea
+        key={node.id}
+        className="memo-text"
+        placeholder="メモ"
+        defaultValue={node.comment ?? ''}
+        onBlur={(e) => {
+          const v = e.target.value.trim()
+          if ((node.comment ?? '') !== v) {
+            node.comment = v || undefined
+            onChange()
+          }
+        }}
+      />
+    </div>
+  )
+
+  return <Sheets open={sheet} onOpenChange={setSheet} area={screen} tree={panel} memo={memo} memoFilled={!!node.comment} />
 }

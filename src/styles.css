@@ -166,12 +166,13 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 /* 閲覧画面：1画面に収める */
 .screen.fit { height: 100dvh; overflow: hidden; padding-bottom: calc(8px + env(safe-area-inset-bottom)); gap: 8px; }
 .screen.fit .nav .btn { min-height: 40px; }
-.next-panel { flex: 1; min-height: 0; overflow-y: auto; }
+.next-panel { flex: 1; min-height: 0; overflow: hidden; padding-bottom: 36px; }
 
 /* 右から重なるパネル（盤は動かない） */
-.drawer-area { position: relative; }
-/* スクロール要素ごとに touch-action が区切られるため、子孫すべてで横の指の動きをアプリ側に渡す */
-.drawer-area, .drawer-area * { touch-action: pan-y pinch-zoom; }
+/* 閲覧画面は1画面に収まるので、指の動きはすべてアプリ側で扱う（メモ本文だけは縦スクロール可） */
+.sheets-area { position: relative; }
+.sheets-area, .sheets-area * { touch-action: none; }
+.sheets-area .memo-text { touch-action: pan-y; }
 .drawer-backdrop { position: fixed; inset: 0; background: #000; z-index: 30; transition: opacity .26s; }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(80vw, 400px); background: var(--surface); border-left: 1px solid var(--line-strong); z-index: 31; box-shadow: -12px 0 32px rgba(0,0,0,.45); will-change: transform; touch-action: pan-y; }
 .drawer-body { height: 100%; display: flex; flex-direction: column; gap: 10px; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
@@ -223,3 +224,17 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .review-done { align-items: center; padding: 32px 16px; }
 .review-done .big { font-size: 26px; margin: 0; letter-spacing: .2em; }
 .review-done .tally { font-size: 18px; }
+
+/* 下から出るメモ */
+.memo-sheet { position: fixed; left: 0; right: 0; bottom: 0; height: min(62dvh, 560px); background: var(--surface); border-top: 1px solid var(--line-strong); border-radius: 18px 18px 0 0; z-index: 31; box-shadow: 0 -12px 32px rgba(0,0,0,.45); will-change: transform; }
+.memo-body { max-width: 480px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; gap: 10px; padding: 8px 16px calc(12px + env(safe-area-inset-bottom)); }
+.memo-grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); margin: 2px auto 4px; flex: none; }
+.memo-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; flex: none; }
+.memo-head small { color: var(--muted); font-size: 13px; }
+.memo-text { flex: 1; min-height: 0; width: 100%; resize: none; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 17px; line-height: 1.9; color: var(--text); }
+.memo-text:focus { outline: none; border-color: var(--accent); }
+.memo-handle { position: fixed; left: 50%; bottom: calc(6px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 29; display: flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--muted); font-size: 12px; cursor: pointer; }
+.memo-handle i { width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); }
+.memo-handle.filled { color: var(--text); }
+.memo-handle.filled i { background: var(--accent); }
+.drawer, .drawer * { touch-action: none; }
