@@ -18,10 +18,11 @@ interface Props {
   onBack: () => void
   onDrill: (fromNode: string) => void
   onImport: () => void
+  onEditPosition: (sfen: string) => void
   toast: (s: string) => void
 }
 
-export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, toast }: Props) {
+export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, toast }: Props) {
   const [edit, setEdit] = useState(false)
   const [flipped, setFlipped] = useState(false)
   const [drawer, setDrawer] = useState(false)
@@ -137,6 +138,11 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
               ⇄ この局面は別の手順でも出てきます（{transposed.length}箇所）
               <button className="link" onClick={() => setNodeId(transposed[0])}>移動</button>
             </p>
+          )}
+          {edit && (
+            <div className="row gap wrap">
+              <button className="btn" onClick={() => onEditPosition(toSfen(pos))}>この局面を並べ替えて新しい本に</button>
+            </div>
           )}
           {node.move && edit && (
             <div className="row gap wrap">

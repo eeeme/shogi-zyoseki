@@ -5,12 +5,13 @@ import {
 } from '../shogi/core'
 import { parseJaMove } from '../shogi/notation'
 import type { ImportNode, ImportTree } from '../book/book'
+import { hasBod, parseBod } from './bod'
 
 export type KifuFormat = 'KIF' | 'KI2' | 'CSA' | 'USI'
 
 export function detectFormat(text: string): KifuFormat {
   if (/^\s*[+-]\d{4}[A-Z]{2}/m.test(text) || /^\s*PI\s*$/m.test(text) || /^V2/m.test(text)) return 'CSA'
-  if (/^\s*\d+\s+(同|[１-９1-9][一二三四五六七八九])/m.test(text) || /手数[-－―ー]+指手/.test(text)) return 'KIF'
+  if (/^\s*\d+\s+(同|[１-９1-9][一二三四五六七八九])/m.test(text) || /手数[-－―ー]+指手/.test(text) || hasBod(text)) return 'KIF'
   if (/[▲△☗☖]\s*(同|[１-９1-9][一二三四五六七八九])/.test(text)) return 'KI2'
   if (/(^|\s)(position|startpos|sfen)(\s|$)/.test(text) || /(^|\s)([1-9][a-i][1-9][a-i]\+?|[PLNSGBR]\*[1-9][a-i])(\s|$)/.test(text)) return 'USI'
   throw new Error('棋譜の形式を判別できません（KIF / KI2 / CSA / USI に対応）')
@@ -66,16 +67,15 @@ const END_WORDS = /^(投了|中断|千日手|詰み|持将棋|切れ負け|反�
 export function parseJapanese(text: string): ImportTree {
   const lines = text.replace(/\r\n?/g, '\n').split('\n')
   let title: string | undefined
+  const withBoard = hasBod(text)
   for (const l of lines) {
     const h = /^(手合割|開始局面)[：:](.*)$/.exec(l.trim())
-    if (h && !/平手/.test(h[2])) throw new Error('平手以外の手合割にはまだ対応していません')
-    if (/^\|/.test(l.trim()) || /^[後先]手の持駒/.test(l.trim())) {
-      throw new Error('局面図付きの棋譜（途中局面から）にはまだ対応していません')
-    }
+    if (h && !/平手/.test(h[2]) && !withBoard) throw new Error('駒落ちの手合割は局面図付きの棋譜で取り込んでください')
     const t = /^(棋戦|表題|戦型)[：:](.*)$/.exec(l.trim())
     if (t && !title) title = t[2].trim()
   }
-  const b = builder(START_SFEN)
+  const rootSfen = withBoard ? parseBod(text) : START_SFEN
+  const b = builder(rootSfen)
   let ended = false
   for (const raw of lines) {
     const line = raw.trim().replace(/同[\s　]+/g, '同')
@@ -91,7 +91,7 @@ export function parseJapanese(text: string): ImportTree {
       if (c) b.comment(c)
       continue
     }
-    if (line.startsWith('#') || /^[^\s]+[：:]/.test(line) || line.startsWith('&')) continue
+    if (line.startsWith('#') || /^[^\s]+[：:]/.test(line) || line.startsWith('&') || line.startsWith('|') || line.startsWith('+-') || /^(後手|上手|先手|下手)番/.test(line)) continue
     if (ended) continue
     // KIF: "  12 ７六歩(77)   ( 0:01/00:00:03)"
     const k = /^(\d+)\s+(\S+)/.exec(line)
@@ -114,7 +114,7 @@ export function parseJapanese(text: string): ImportTree {
     }
     if (END_WORDS.test(line)) ended = true
   }
-  return { rootSfen: START_SFEN, root: b.root, title }
+  return { rootSfen, root: b.root, title }
 }
 
 // ---------- CSA ----------

@@ -73,3 +73,27 @@ describe('import', () => {
     expect(transpositionIndex(b2).size).toBeGreaterThan(0)
   })
 })
+
+describe('局面図', () => {
+  it('BOD付きKIFを読み、書き出し→再取込で同じ局面・手順になる', async () => {
+    const { toBod, parseBod } = await import('./bod')
+    // 後手番・持駒ありの自由配置
+    const sfen = '4k4/9/4G4/9/9/9/9/9/4K4 w G2Pr 1'
+    const bod = toBod(sfen).join('\n')
+    expect(bod).toContain('後手番')
+    expect(bod).toContain('先手の持駒：金　歩二')
+    expect(parseBod(bod)).toBe(toSfen(parseSfen(sfen)))
+
+    const kif = `${bod}\n手数----指手---------消費時間--\n   1 ４一玉(51)\n   2 ５二金打\n`
+    const t = parseKifu(kif)
+    expect(t.format).toBe('KIF')
+    expect(toSfen(parseSfen(t.rootSfen))).toBe(toSfen(parseSfen(sfen)))
+    expect(mainLine(t)).toEqual(['5a4a', 'G*5b'])
+
+    const b = newBook('bod', t.rootSfen)
+    mergeImport(b, t)
+    const again = parseKifu(exportKif(b))
+    expect(mainLine(again)).toEqual(['5a4a', 'G*5b'])
+    expect(toSfen(parseSfen(again.rootSfen))).toBe(toSfen(parseSfen(sfen)))
+  })
+})

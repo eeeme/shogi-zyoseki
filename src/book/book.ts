@@ -19,9 +19,16 @@ export interface BookNode {
   label?: string
 }
 
+export interface Folder {
+  id: string
+  name: string
+  createdAt: number
+}
+
 export interface Book {
   id: string
   name: string
+  folderId?: string // 未指定 = フォルダに入れない（一覧の直下）
   rootSfen: string
   rootId: string
   nodes: Record<string, BookNode>
@@ -32,11 +39,11 @@ export interface Book {
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 
-export function newBook(name: string, rootSfen = START_SFEN): Book {
+export function newBook(name: string, rootSfen = START_SFEN, folderId?: string): Book {
   const rootId = uid()
   const now = Date.now()
   return {
-    id: uid(), name, rootSfen, rootId,
+    id: uid(), name, rootSfen, rootId, folderId,
     nodes: { [rootId]: { id: rootId, parent: null, move: null, children: [] } },
     srs: {}, createdAt: now, updatedAt: now,
   }

@@ -2,6 +2,7 @@
 import { applyMove, fileOf, rankOf, usiToMove, type Pos } from '../shogi/core'
 import { moveToJa } from '../shogi/notation'
 import { type Book, positionAt } from '../book/book'
+import { isStartSfen, toBod } from './bod'
 
 function kifMove(pos: Pos, usi: string, prevTo: number | null): string {
   const m = usiToMove(usi)
@@ -13,13 +14,10 @@ function kifMove(pos: Pos, usi: string, prevTo: number | null): string {
 }
 
 export function exportKif(book: Book): string {
-  if (book.rootSfen.split(' ')[0] !== 'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL') {
-    throw new Error('平手以外の開始局面はKIF書き出しに未対応です')
-  }
   const out: string[] = [
     '# KIF形式棋譜ファイル',
     `棋戦：${book.name}`,
-    '手合割：平手',
+    ...(isStartSfen(book.rootSfen) ? ['手合割：平手'] : toBod(book.rootSfen)),
     '先手：',
     '後手：',
     '手数----指手---------消費時間--',

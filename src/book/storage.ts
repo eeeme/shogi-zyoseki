@@ -1,12 +1,13 @@
 // IndexedDB 保存（サーバー無し・端末内完結）
 import { openDB, type IDBPDatabase } from 'idb'
-import type { Book } from './book'
+import type { Book, Folder } from './book'
 
 let dbp: Promise<IDBPDatabase> | null = null
 const db = () =>
-  (dbp ??= openDB('shogi-zyoseki', 1, {
+  (dbp ??= openDB('shogi-zyoseki', 2, {
     upgrade(d) {
-      d.createObjectStore('books', { keyPath: 'id' })
+      if (!d.objectStoreNames.contains('books')) d.createObjectStore('books', { keyPath: 'id' })
+      if (!d.objectStoreNames.contains('folders')) d.createObjectStore('folders', { keyPath: 'id' })
     },
   }))
 
@@ -22,6 +23,19 @@ export async function saveBook(book: Book) {
 
 export async function deleteBook(id: string) {
   await (await db()).delete('books', id)
+}
+
+export async function loadFolders(): Promise<Folder[]> {
+  const all = (await (await db()).getAll('folders')) as Folder[]
+  return all.sort((a, b) => a.name.localeCompare(b.name, 'ja'))
+}
+
+export async function saveFolder(f: Folder) {
+  await (await db()).put('folders', structuredClone(f))
+}
+
+export async function deleteFolder(id: string) {
+  await (await db()).delete('folders', id)
 }
 
 const FLAG = 'zyoseki.sampleInstalled'

@@ -13,11 +13,19 @@ interface Props {
   hidePieces?: boolean
   interactive?: boolean
   onMove?: (m: Move) => void
+  /** 盤面編集用：指定すると指し手のルールを使わず、タップをそのまま渡す */
+  edit?: {
+    onSquare: (sq: number) => void
+    onHandPiece: (c: Color, t: HandType) => void
+    onHandArea: (c: Color) => void
+    selectedSq: number | null
+    selectedHand: { c: Color; t: HandType } | null
+  }
 }
 
 type Sel = { kind: 'sq'; sq: number } | { kind: 'hand'; t: HandType } | null
 
-export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces, interactive = true, onMove }: Props) {
+export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces, interactive = true, onMove, edit }: Props) {
   const [sel, setSel] = useState<Sel>(null)
   const [promo, setPromo] = useState<Move[] | null>(null)
   const [prevPos, setPrevPos] = useState(pos)
@@ -44,6 +52,7 @@ export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces
   }
 
   const tapSquare = (sq: number) => {
+    if (edit) return edit.onSquare(sq)
     if (!interactive || promo) return
     const p = pos.board[sq]
     if (sel?.kind === 'hand') {
@@ -64,6 +73,7 @@ export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces
   }
 
   const tapHand = (c: Color, t: HandType) => {
+    if (edit) return edit.onHandPiece(c, t)
     if (!interactive || c !== pos.turn || promo) return
     setSel(sel?.kind === 'hand' && sel.t === t ? null : { kind: 'hand', t })
   }
@@ -73,19 +83,22 @@ export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces
   const bottom: Color = flipped ? 1 : 0
 
   const hand = (c: Color) => (
-    <div className={`hand ${c === bottom ? 'hand-bottom' : 'hand-top'}`}>
+    <div
+      className={`hand ${c === bottom ? 'hand-bottom' : 'hand-top'} ${edit ? 'hand-edit' : ''}`}
+      onClick={edit ? (e) => { if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('hand-empty')) edit.onHandArea(c) } : undefined}
+    >
       <span className="hand-mark">{c === 0 ? '☗' : '☖'}</span>
       {HAND_TYPES.filter((t) => pos.hands[c][t] > 0).map((t) => (
         <button
           key={t}
-          className={`hand-piece ${sel?.kind === 'hand' && sel.t === t && c === pos.turn ? 'selected' : ''} ${hint?.drop === t && c === pos.turn ? 'hint' : ''}`}
-          onClick={() => tapHand(c, t)}
+          className={`hand-piece ${(edit ? edit.selectedHand?.c === c && edit.selectedHand.t === t : sel?.kind === 'hand' && sel.t === t && c === pos.turn) ? 'selected' : ''} ${hint?.drop === t && c === pos.turn ? 'hint' : ''}`}
+          onClick={(e) => { e.stopPropagation(); tapHand(c, t) }}
         >
           {PIECE_CHAR[t]}
           {pos.hands[c][t] > 1 && <small>{pos.hands[c][t]}</small>}
         </button>
       ))}
-      {HAND_TYPES.every((t) => pos.hands[c][t] === 0) && <span className="hand-empty">なし</span>}
+      {HAND_TYPES.every((t) => pos.hands[c][t] === 0) && <span className="hand-empty">{edit ? '持駒なし（タップで追加）' : 'なし'}</span>}
     </div>
   )
 
@@ -104,7 +117,7 @@ export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces
                 const p = pos.board[sq]
                 const cls = [
                   'sq',
-                  sel?.kind === 'sq' && sel.sq === sq ? 'selected' : '',
+                  (edit ? edit.selectedSq === sq : sel?.kind === 'sq' && sel.sq === sq) ? 'selected' : '',
                   targets.has(sq) ? 'target' : '',
                   lastTo === sq ? 'last' : '',
                   lastFrom === sq ? 'last-from' : '',
