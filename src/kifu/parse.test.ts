@@ -150,3 +150,19 @@ describe('局面検索', () => {
     expect(r.similar[0].score).toBeGreaterThan(0.9)
   })
 })
+
+describe('マージ', () => {
+  it('同じ局面の先の手順とメモを、元の本のその局面に追記する', async () => {
+    const { extractSubtree } = await import('../book/book')
+    const a = newBook('a')
+    mergeImport(a, parseKifu('   1 ７六歩(77)\n   2 ３四歩(33)\n*元のメモ\n   3 ２六歩(27)\n'))
+    const b = newBook('b')
+    mergeImport(b, parseKifu('   1 ７六歩(77)\n   2 ３四歩(33)\n*別のメモ\n   3 ６六歩(67)\n   4 ８四歩(83)\n'))
+    const aNode = followLine(a, ['7g7f', '3c3d']).nodeId
+    const bNode = followLine(b, ['7g7f', '3c3d']).nodeId
+    const r = mergeImport(a, extractSubtree(b, bNode), aNode)
+    expect(r.added).toBe(2)
+    expect(a.nodes[aNode].children.length).toBe(2)
+    expect(a.nodes[aNode].comment).toBe('元のメモ\n別のメモ')
+  })
+})

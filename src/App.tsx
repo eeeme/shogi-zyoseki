@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { type Book, type Folder, mergeImport, newBook, uid } from './book/book'
+import { type Book, type Folder, cloneBook, extractSubtree, mergeImport, newBook, uid } from './book/book'
 import {
   deleteBook, deleteFolder, loadBooks, loadFolders, markSampleInstalled, sampleInstalled, saveBook, saveFolder,
 } from './book/storage'
@@ -15,13 +15,17 @@ import { Review } from './ui/Review'
 import { Search } from './ui/Search'
 import { MetaSheet, TagSheet, metaLine } from './ui/Forms'
 
+interface Origin { bookId: string; nodeId: string }
+/** 検索結果から開いた時の情報（戻り先・マージ元） */
+interface Via { search: Screen; origin?: Origin; hitNodeId: string; exact: boolean }
+
 type Screen =
   | { kind: 'home' }
-  | { kind: 'explore'; bookId: string; nodeId: string }
+  | { kind: 'explore'; bookId: string; nodeId: string; via?: Via }
   | { kind: 'drill'; bookId: string; nodeId: string }
   | { kind: 'import'; target?: string; back: Screen }
   | { kind: 'editor'; sfen?: string; back: Screen; forSearch?: boolean }
-  | { kind: 'search'; sfen: string; back: Screen }
+  | { kind: 'search'; sfen: string; back: Screen; origin?: Origin }
   | { kind: 'review'; items: DueItem[] }
 
 export default function App() {
@@ -31,6 +35,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>({ kind: 'home' })
   const [rev, setRev] = useState(0)
   const [toastMsg, setToastMsg] = useState('')
+  const [appSheet, setAppSheet] = useState<{ title: string; items: SheetItem[] } | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -73,11 +78,57 @@ export default function App() {
         nodeId={book.nodes[screen.nodeId] ? screen.nodeId : book.rootId}
         setNodeId={(id) => setScreen({ ...screen, nodeId: id })}
         onChange={() => touch(book)}
-        onBack={() => { setFolderId(book.folderId ?? null); setScreen({ kind: 'home' }) }}
+        onBack={() => {
+          const via = screen.via
+          if (via?.origin) return setScreen({ kind: 'explore', bookId: via.origin.bookId, nodeId: via.origin.nodeId })
+          if (via) return setScreen(via.search)
+          setFolderId(book.folderId ?? null)
+          setScreen({ kind: 'home' })
+        }}
+        fromSearch={!!screen.via}
+        onMerge={screen.via?.exact ? () => {
+          const via = screen.via!
+          const tree = extractSubtree(book, via.hitNodeId)
+          const originBook = via.origin ? bookOf(via.origin.bookId) : undefined
+          const items: SheetItem[] = []
+          if (originBook && via.origin) {
+            const at = via.origin.nodeId
+            items.push({
+              label: `「${originBook.name}」に取り込む`,
+              onClick: () => {
+                const r = mergeImport(originBook, tree, at)
+                touch(originBook)
+                setScreen({ kind: 'explore', bookId: originBook.id, nodeId: at })
+                toast(r.added ? `${r.added}手を追加` : '追加する手はありません')
+              },
+            })
+            items.push({
+              label: '新しい本にする',
+              onClick: () => {
+                const c = cloneBook(originBook, `${originBook.name}＋${book.name}`)
+                const r = mergeImport(c, tree, at)
+                touch(c)
+                setScreen({ kind: 'explore', bookId: c.id, nodeId: at })
+                toast(`${r.added}手を追加`)
+              },
+            })
+          } else {
+            items.push({
+              label: '新しい本にする',
+              onClick: () => {
+                const c = newBook(`${book.name}（局面から）`, tree.rootSfen, book.folderId)
+                mergeImport(c, tree)
+                touch(c)
+                setScreen({ kind: 'explore', bookId: c.id, nodeId: c.rootId })
+              },
+            })
+          }
+          setAppSheet({ title: 'マージ', items })
+        } : undefined}
         onDrill={(nodeId) => setScreen({ kind: 'drill', bookId: book.id, nodeId })}
         onImport={() => setScreen({ kind: 'import', target: book.id, back: screen })}
         onEditPosition={(sfen) => setScreen({ kind: 'editor', sfen, back: screen })}
-        onSearch={(sfen) => setScreen({ kind: 'search', sfen, back: screen })}
+        onSearch={(sfen) => setScreen({ kind: 'search', sfen, back: screen, origin: { bookId: book.id, nodeId: screen.nodeId } })}
         toast={toast}
       />
     )
@@ -110,7 +161,8 @@ export default function App() {
       <Search
         books={books}
         sfen={screen.sfen}
-        onOpen={(bookId, nodeId) => setScreen({ kind: 'explore', bookId, nodeId })}
+        exclude={screen.origin}
+        onOpen={(bookId, nodeId, exact) => setScreen({ kind: 'explore', bookId, nodeId, via: { search: screen, origin: screen.origin, hitNodeId: nodeId, exact } })}
         onEditQuery={() => setScreen({ kind: 'editor', sfen: screen.sfen, back: screen.back, forSearch: true })}
         onBack={() => setScreen(screen.back)}
       />
@@ -188,6 +240,7 @@ export default function App() {
     <>
       {body}
       {toastMsg && <div className="toast">{toastMsg}</div>}
+      {appSheet && <ActionSheet title={appSheet.title} items={appSheet.items} onClose={() => setAppSheet(null)} />}
     </>
   )
 }

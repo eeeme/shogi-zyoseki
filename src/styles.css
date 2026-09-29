@@ -288,3 +288,4 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .mini-piece { fill: var(--text); font-family: inherit; font-weight: 600; }
 .mini-piece.promoted { fill: var(--bad); }
 .mini-hand { fill: var(--muted); font-size: 10px; font-family: inherit; }
+.icon-btn:disabled, .btn:disabled { opacity: .3; cursor: default; }

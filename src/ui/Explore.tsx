@@ -21,10 +21,14 @@ interface Props {
   onImport: () => void
   onEditPosition: (sfen: string) => void
   onSearch: (sfen: string) => void
+  /** 検索結果から開いた時：虫眼鏡を使えなくし、戻る先を検索元にする */
+  fromSearch?: boolean
+  /** 一致した局面から開いた時だけ：検索元とマージ */
+  onMerge?: () => void
   toast: (s: string) => void
 }
 
-export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, onSearch, toast }: Props) {
+export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, onSearch, fromSearch, onMerge, toast }: Props) {
   // 空の本は最初から編集モード
   const [edit, setEdit] = useState(() => book.nodes[book.rootId].children.length === 0)
   const [flipped, setFlipped] = useState(false)
@@ -92,7 +96,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
   const screen = (
     <div className="screen fit">
       <header className="bar">
-        <button className="btn ghost" onClick={onBack}>‹ 一覧</button>
+        <button className="btn ghost" onClick={onBack}>{fromSearch ? '‹ 戻る' : '‹ 一覧'}</button>
         <h1
           className="bar-title"
           onClick={() => {
@@ -100,7 +104,9 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
             if (name?.trim()) { book.name = name.trim(); onChange() }
           }}
         >{book.name}</h1>
-        <button className="btn primary" onClick={() => onDrill(node.id)}>練習</button>
+        {onMerge
+          ? <button className="btn primary" onClick={onMerge}>マージ</button>
+          : <button className="btn primary" onClick={() => onDrill(node.id)}>練習</button>}
       </header>
       {metaLine(book.meta) && <p className="meta-line">{metaLine(book.meta)}</p>}
 
@@ -120,7 +126,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <span className="nav-now">{node.move ? pathLabels.at(-1)?.label : '開始局面'}<small>{path.length - 1}手目</small></span>
         <button className="btn" onClick={goFirstChild} aria-label="本線で1手進む">▶</button>
         <button className="btn" onClick={goLeaf} aria-label="本線の最後へ">⏭</button>
-        <button className="icon-btn" onClick={() => onSearch(toSfen(pos))} aria-label="この局面を検索">
+        <button className="icon-btn" onClick={() => onSearch(toSfen(pos))} aria-label="この局面を検索" disabled={fromSearch}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M15 15l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
         </button>
         <span className="nav-gap" />

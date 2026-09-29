@@ -193,3 +193,23 @@ export function transpositionIndex(book: Book): Map<string, string[]> {
 export function countNodes(book: Book) {
   return Object.keys(book.nodes).length - 1
 }
+
+/** ノード以降（その局面から先）を取り込み用ツリーとして切り出す。メモも含む */
+export function extractSubtree(book: Book, nodeId: string): ImportTree {
+  const conv = (id: string): ImportNode => {
+    const n = book.nodes[id]
+    return { move: n.move, comment: n.comment, children: n.children.map(conv) }
+  }
+  const root = conv(nodeId)
+  root.move = null
+  return { rootSfen: toSfen(positionAt(book, nodeId).pos), root }
+}
+
+/** 本の複製（別の本として保存する用）。練習の記録も引き継ぐ */
+export function cloneBook(book: Book, name: string): Book {
+  const c: Book = structuredClone(book)
+  c.id = uid()
+  c.name = name
+  c.createdAt = c.updatedAt = Date.now()
+  return c
+}

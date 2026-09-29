@@ -8,13 +8,19 @@ import { MiniBoard } from './MiniBoard'
 interface Props {
   books: Book[]
   sfen: string
-  onOpen: (bookId: string, nodeId: string) => void
+  exclude?: { bookId: string; nodeId: string }
+  onOpen: (bookId: string, nodeId: string, exact: boolean) => void
   onEditQuery: () => void
   onBack: () => void
 }
 
-export function Search({ books, sfen, onOpen, onEditQuery, onBack }: Props) {
-  const { exact, similar } = useMemo(() => searchPositions(books, parseSfen(sfen)), [books, sfen])
+export function Search({ books, sfen, exclude, onOpen, onEditQuery, onBack }: Props) {
+  const { exact, similar } = useMemo(() => {
+    const r = searchPositions(books, parseSfen(sfen))
+    // 検索元の局面そのものは結果から外す
+    const keep = (h: Hit) => !(exclude && h.bookId === exclude.bookId && h.nodeId === exclude.nodeId)
+    return { exact: r.exact.filter(keep), similar: r.similar.filter(keep) }
+  }, [books, sfen, exclude])
 
   const row = (h: Hit) => {
     const book = books.find((b) => b.id === h.bookId)!
@@ -27,7 +33,7 @@ export function Search({ books, sfen, onOpen, onEditQuery, onBack }: Props) {
     const players = book.meta?.sente || book.meta?.gote ? `☗${book.meta?.sente ?? ''} ☖${book.meta?.gote ?? ''}` : ''
     return (
       <li key={`${h.bookId}-${h.nodeId}`}>
-        <button className="hit" onClick={() => onOpen(h.bookId, h.nodeId)}>
+        <button className="hit" onClick={() => onOpen(h.bookId, h.nodeId, h.score === 1)}>
           <MiniBoard sfen={h.sfen} />
           <span className="hit-info">
             <span className="hit-title">{book.name}</span>
