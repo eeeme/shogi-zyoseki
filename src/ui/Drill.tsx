@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { type Move, moveToUsi, usiToMove } from '../shogi/core'
 import { moveToJa, moveToKana } from '../shogi/notation'
 import { type Book, findChild, positionAt } from '../book/book'
-import { grade, pickWeighted, quizNodes, turnAt, weights, statusOf } from '../book/srs'
+import { grade, pickWeighted, quizNodes, turnAt, weights } from '../book/srs'
 import { Board } from './Board'
 import { speak } from './speech'
 
@@ -111,7 +111,6 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
   }
 
   if (phase === 'setup') {
-    const dueHere = quizNodes(book, side, origin).filter((id) => statusOf(book, id) === 'due').length
     return (
       <div className="screen">
         <header className="bar">
@@ -139,11 +138,8 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
             <button className={`chip ${blind ? 'on' : ''}`} onClick={() => setBlind(!blind)}>駒を隠す（脳内盤）</button>
             <button className={`chip ${voice ? 'on' : ''}`} onClick={() => setVoice(!voice)}>相手の手を読み上げ</button>
           </div>
-          <p className="muted">
-            出題局面 {quizCount} ／ 要復習 {dueHere}。相手の手は「要復習・未学習」が多い変化を優先して選びます。
-          </p>
           <button className="btn primary wide" onClick={start} disabled={quizCount === 0}>
-            {quizCount === 0 ? 'この手番で答える局面がありません' : 'はじめる'}
+            {quizCount === 0 ? '出題なし' : 'はじめる'}
           </button>
         </section>
       </div>

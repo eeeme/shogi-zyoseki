@@ -23,7 +23,8 @@ interface Props {
 }
 
 export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, toast }: Props) {
-  const [edit, setEdit] = useState(false)
+  // 空の本は最初から編集モード
+  const [edit, setEdit] = useState(() => book.nodes[book.rootId].children.length === 0)
   const [flipped, setFlipped] = useState(false)
   const [drawer, setDrawer] = useState(false)
 
@@ -57,7 +58,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
     const exist = findChild(book, node.id, moveToUsi(m))
     if (exist) return setNodeId(exist)
     if (!edit) {
-      toast('定跡にない手です（「編集」をオンにすると追加できます）')
+      toast('定跡にない手')
       return
     }
     const r = addChild(book, node.id, m)
@@ -124,7 +125,6 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
               <button className={`chip ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)}>編集</button>
             </div>
           </div>
-          {children.length === 0 && <p className="muted">この先の手はまだありません{edit ? '。盤で指すと追加されます。' : '。'}</p>}
           <div className="choices">
             {children.map((c, i) => (
               <button key={c.id} className={`choice ${i === 0 ? 'main' : ''}`} onClick={() => setNodeId(c.id)}>
@@ -134,14 +134,11 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
             ))}
           </div>
           {transposed.length > 0 && (
-            <p className="note">
-              ⇄ この局面は別の手順でも出てきます（{transposed.length}箇所）
-              <button className="link" onClick={() => setNodeId(transposed[0])}>移動</button>
-            </p>
+            <button className="chip" onClick={() => setNodeId(transposed[0])}>⇄ 合流 {transposed.length}</button>
           )}
           {edit && (
             <div className="row gap wrap">
-              <button className="btn" onClick={() => onEditPosition(toSfen(pos))}>この局面を並べ替えて新しい本に</button>
+              <button className="btn" onClick={() => onEditPosition(toSfen(pos))}>この局面から盤面編集</button>
             </div>
           )}
           {node.move && edit && (
@@ -161,10 +158,10 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
               >この手以降を削除</button>
             </div>
           )}
-          <textarea
+          {(edit || node.comment) && <textarea
             key={node.id}
             className="comment"
-            placeholder={edit ? 'メモ（狙い・注意点など）' : 'メモなし'}
+            placeholder="メモ"
             defaultValue={node.comment ?? ''}
             readOnly={!edit}
             rows={node.comment || edit ? 3 : 1}
@@ -175,7 +172,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
                 onChange()
               }
             }}
-          />
+          />}
       </section>
     </div>
   )
@@ -184,10 +181,8 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
     <div className="drawer-body">
       <div className="drawer-head">
         <span>定跡ツリー</span>
-        <span className="muted">ツリーは指で上下左右に動かせます</span>
       </div>
       <TreeView book={book} rev={rev} currentId={node.id} onSelect={setNodeId} />
-      <p className="legend muted"><i className="lg due">●</i>要復習 <i className="lg learning">●</i>学習中 <i className="lg good">●</i>定着　＊メモ　⇄合流</p>
       <div className="row gap">
         <button className="chip" onClick={onImport}>棋譜を取込</button>
         <button className="chip" onClick={download}>KIF書出</button>

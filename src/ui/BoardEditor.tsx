@@ -182,13 +182,7 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast }: Props) {
             <button className="chip" onClick={toBox}>駒箱へ</button>
             <button className="chip" onClick={() => setSel(null)}>選択解除</button>
           </div>
-        ) : (
-          <p className="muted">
-            {sel?.kind === 'palette'
-              ? 'マスをタップで配置、持駒欄をタップで持駒に追加。'
-              : '駒箱から駒を選んで置く／盤の駒をタップして移動・成・先後反転。'}
-          </p>
-        )}
+        ) : null}
 
         <div className="palette-head">
           <div className="seg small">
@@ -236,8 +230,7 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast }: Props) {
             }}
           >後手玉だけ残す</button>
         </div>
-        <input placeholder="本の名前（例：美濃囲いの急所、次の一手）" value={name} onChange={(e) => setName(e.target.value)} />
-        <button className="btn primary wide" onClick={create}>この局面で本を作る</button>
+        <input placeholder="名前" value={name} onChange={(e) => setName(e.target.value)} />
       </section>
     </div>
   )

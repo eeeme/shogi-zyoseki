@@ -82,14 +82,9 @@ export function Import({ books, initialTarget, onCreate, onChange, onOpen, onBac
       </header>
       <section className="panel setup">
         <div className="seg">
-          <button className={mode === 'import' ? 'on' : ''} onClick={() => { setMode('import'); setResult(null) }}>定跡に取り込む</button>
-          <button className={mode === 'check' ? 'on' : ''} onClick={() => { setMode('check'); setResult(null) }}>実戦を照合</button>
+          <button className={mode === 'import' ? 'on' : ''} onClick={() => { setMode('import'); setResult(null) }}>取り込む</button>
+          <button className={mode === 'check' ? 'on' : ''} onClick={() => { setMode('check'); setResult(null) }}>照合</button>
         </div>
-        <p className="muted">
-          {mode === 'import'
-            ? 'KIF / KI2 / CSA / USI(SFEN) に対応。KIF・KI2 の「変化」は分岐としてそのまま取り込みます。'
-            : '自分の対局の棋譜を貼ると、何手目で定跡を外れたか、定跡では何を指すべきだったかを表示します。'}
-        </p>
 
         <label>{mode === 'import' ? '取り込み先' : '照合する本'}</label>
         <select value={target} onChange={(e) => setTarget(e.target.value)}>
@@ -97,19 +92,19 @@ export function Import({ books, initialTarget, onCreate, onChange, onOpen, onBac
           {books.map((b) => <option key={b.id} value={b.id}>{b.name}（{bookPreview(b.id)}）</option>)}
         </select>
         {mode === 'import' && target === 'new' && (
-          <input placeholder="本の名前（例：四間飛車 対 急戦）" value={name} onChange={(e) => setName(e.target.value)} />
+          <input placeholder="名前" value={name} onChange={(e) => setName(e.target.value)} />
         )}
 
         <label>棋譜</label>
         <textarea
           className="kifu-input"
           rows={8}
-          placeholder={'棋譜を貼り付け、またはファイルを選択\n例）▲７六歩 △３四歩 ▲２六歩'}
+          placeholder="棋譜を貼り付け"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
         <label className="btn file">
-          ファイルを選ぶ（.kif .kifu .ki2 .csa .txt）
+          ファイルを選ぶ
           <input type="file" accept=".kif,.kifu,.ki2,.ki2u,.csa,.txt,.sfen,.usi" onChange={(e) => onFile(e.target.files?.[0])} hidden />
         </label>
         <button className="btn primary wide" disabled={!text.trim()} onClick={run}>

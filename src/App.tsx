@@ -108,7 +108,6 @@ export default function App() {
           const b = newBook(name, sfen, folder)
           touch(b)
           setScreen({ kind: 'explore', bookId: b.id, nodeId: b.rootId })
-          toast('「編集」をオンにして盤で指すと手が登録されます')
         }}
       />
     )
@@ -122,12 +121,11 @@ export default function App() {
         onOpen={(b) => setScreen({ kind: 'explore', bookId: b.id, nodeId: b.rootId })}
         onDrill={(b) => setScreen({ kind: 'drill', bookId: b.id, nodeId: b.rootId })}
         onNew={() => {
-          const name = prompt('本の名前', '新しい定跡')
+          const name = prompt('名前', '新しい定跡')
           if (!name?.trim()) return
           const b = newBook(name.trim(), undefined, inFolder)
           touch(b)
           setScreen({ kind: 'explore', bookId: b.id, nodeId: b.rootId })
-          toast('「編集」をオンにして盤で指すと手が登録されます')
         }}
         onEditor={() => setScreen({ kind: 'editor', back: { kind: 'home' } })}
         onImport={() => setScreen({ kind: 'import', back: { kind: 'home' } })}
@@ -138,7 +136,7 @@ export default function App() {
           setBooks(books.filter((x) => x.id !== b.id))
         }}
         onNewFolder={async () => {
-          const name = prompt('フォルダ名', '新しいフォルダ')
+          const name = prompt('フォルダ名', '')
           if (!name?.trim()) return
           const f: Folder = { id: uid(), name: name.trim(), createdAt: Date.now() }
           await saveFolder(f)
@@ -241,16 +239,21 @@ function Home(p: HomeProps) {
       ) : (
         <header className="hero">
           <h1>定跡帳</h1>
-          <p className="muted">分岐をたどって覚える、将棋の定跡ノート</p>
         </header>
       )}
 
-      <div className="home-actions">
-        <button className="btn primary" onClick={p.onNew}>＋ 新しい本</button>
-        <button className="btn" onClick={p.onEditor}>盤面を並べて作る</button>
-        <button className="btn" onClick={p.onImport}>棋譜の取込・照合</button>
-        {!folder && <button className="btn" onClick={p.onNewFolder}>＋ フォルダ</button>}
-      </div>
+      <button
+        className="btn primary wide"
+        onClick={() => setSheet({
+          title: '新規作成',
+          items: [
+            { label: '初手から', onClick: p.onNew },
+            { label: '盤面を並べて', onClick: p.onEditor },
+            { label: '棋譜から', onClick: p.onImport },
+            ...(folder ? [] : [{ label: 'フォルダ', onClick: p.onNewFolder }]),
+          ],
+        })}
+      >＋ 新規作成</button>
 
       {!folder && folders.length > 0 && (
         <ul className="books">
@@ -269,11 +272,6 @@ function Home(p: HomeProps) {
         </ul>
       )}
 
-      {shown.length === 0 && (
-        <p className="muted center-text">
-          {folder ? 'このフォルダは空です。本の「⋯」から移動するか、ここで新しい本を作ってください。' : '本がありません。棋譜を取り込むか、新しい本を作ってください。'}
-        </p>
-      )}
       <ul className="books">
         {shown.map((b) => {
           const s0 = bookStats(b, 0)
@@ -296,7 +294,7 @@ function Home(p: HomeProps) {
           )
         })}
       </ul>
-      <footer className="foot muted">データはこの端末内だけに保存されます。ME IS ME</footer>
+      <footer className="foot muted">ME IS ME</footer>
       {sheet && <ActionSheet title={sheet.title} items={sheet.items} onClose={() => setSheet(null)} />}
     </div>
   )

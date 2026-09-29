@@ -98,7 +98,7 @@ export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces
           {pos.hands[c][t] > 1 && <small>{pos.hands[c][t]}</small>}
         </button>
       ))}
-      {HAND_TYPES.every((t) => pos.hands[c][t] === 0) && <span className="hand-empty">{edit ? '持駒なし（タップで追加）' : 'なし'}</span>}
+      {HAND_TYPES.every((t) => pos.hands[c][t] === 0) && <span className="hand-empty">{edit ? '＋' : ''}</span>}
     </div>
   )
 
