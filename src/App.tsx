@@ -3,7 +3,7 @@ import { type Book, type Folder, mergeImport, newBook, uid } from './book/book'
 import {
   deleteBook, deleteFolder, loadBooks, loadFolders, markSampleInstalled, sampleInstalled, saveBook, saveFolder,
 } from './book/storage'
-import { bookStats } from './book/srs'
+import { type DueItem, bookStats, dueItems } from './book/srs'
 import { SAMPLE_KIF, SAMPLE_NAME } from './book/sample'
 import { parseKifu } from './kifu/parse'
 import { Explore } from './ui/Explore'
@@ -11,6 +11,7 @@ import { Drill } from './ui/Drill'
 import { Import } from './ui/Import'
 import { BoardEditor } from './ui/BoardEditor'
 import { ActionSheet, type SheetItem } from './ui/ActionSheet'
+import { Review } from './ui/Review'
 
 type Screen =
   | { kind: 'home' }
@@ -18,6 +19,7 @@ type Screen =
   | { kind: 'drill'; bookId: string; nodeId: string }
   | { kind: 'import'; target?: string; back: Screen }
   | { kind: 'editor'; sfen?: string; back: Screen }
+  | { kind: 'review'; items: DueItem[] }
 
 export default function App() {
   const [books, setBooks] = useState<Book[] | null>(null)
@@ -97,6 +99,8 @@ export default function App() {
         onBack={() => setScreen(screen.back)}
       />
     )
+  } else if (screen.kind === 'review') {
+    body = <Review books={books} items={screen.items} onChange={touch} onBack={() => setScreen({ kind: 'home' })} />
   } else if (screen.kind === 'editor') {
     body = (
       <BoardEditor
@@ -128,6 +132,7 @@ export default function App() {
           setScreen({ kind: 'explore', bookId: b.id, nodeId: b.rootId })
         }}
         onEditor={() => setScreen({ kind: 'editor', back: { kind: 'home' } })}
+        onReview={(items) => setScreen({ kind: 'review', items })}
         onImport={() => setScreen({ kind: 'import', back: { kind: 'home' } })}
         onChangeBook={touch}
         onDeleteBook={async (b) => {
@@ -179,6 +184,7 @@ interface HomeProps {
   onDrill: (b: Book) => void
   onNew: () => void
   onEditor: () => void
+  onReview: (items: DueItem[]) => void
   onImport: () => void
   onChangeBook: (b: Book) => void
   onDeleteBook: (b: Book) => void
@@ -192,6 +198,8 @@ function Home(p: HomeProps) {
   const [sheet, setSheet] = useState<{ title: string; items: SheetItem[] } | null>(null)
   const folder = folders.find((f) => f.id === folderId) ?? null
   const shown = books.filter((b) => (folder ? b.folderId === folder.id : !b.folderId || !folders.some((f) => f.id === b.folderId)))
+  // 一覧の直下では全部の本、フォルダ内ではそのフォルダの本が復習の対象
+  const due = dueItems(folder ? shown : books)
 
   const bookMenu = (b: Book) => setSheet({
     title: b.name,
@@ -254,6 +262,11 @@ function Home(p: HomeProps) {
           ],
         })}
       >＋ 新規作成</button>
+      {due.length > 0 && (
+        <button className="btn review-btn wide" onClick={() => p.onReview(due)}>
+          今日の復習<span className="count">{due.length}</span>
+        </button>
+      )}
 
       {!folder && folders.length > 0 && (
         <ul className="books">
@@ -276,14 +289,14 @@ function Home(p: HomeProps) {
         {shown.map((b) => {
           const s0 = bookStats(b, 0)
           const s1 = bookStats(b, 1)
-          const due = s0.due + s1.due
+          const bookDue = s0.due + s1.due
           return (
             <li key={b.id} className="book">
               <button className="book-main" onClick={() => p.onOpen(b)}>
                 <span className="book-name">{b.name}</span>
                 <span className="book-meta">
-                  {Object.keys(b.nodes).length - 1}手 ・ 定着 ☗{s0.good}/{s0.total} ☖{s1.good}/{s1.total}
-                  {due > 0 && <em className="due"> ・ 要復習 {due}</em>}
+                  {Object.keys(b.nodes).length - 1}手 ・ 定着 {s0.good + s1.good}/{s0.total + s1.total}
+                  {bookDue > 0 && <em className="due"> ・ 復習 {bookDue}</em>}
                 </span>
               </button>
               <div className="book-actions">

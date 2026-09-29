@@ -97,3 +97,25 @@ describe('局面図', () => {
     expect(toSfen(parseSfen(again.rootSfen))).toBe(toSfen(parseSfen(sfen)))
   })
 })
+
+describe('忘却曲線', () => {
+  it('正解で1日→3日→伸びる、間違いで10分後、期限切れだけが復習に出る', async () => {
+    const { grade, dueItems } = await import('../book/srs')
+    const t0 = Date.UTC(2026, 0, 1)
+    let s = grade(undefined, true, t0)
+    expect(s.interval).toBe(1)
+    s = grade(s, true, t0)
+    expect(s.interval).toBe(3)
+    s = grade(s, true, t0)
+    expect(s.interval).toBeGreaterThanOrEqual(7)
+    const miss = grade(s, false, t0)
+    expect(miss.due - t0).toBe(10 * 60 * 1000)
+
+    const b = newBook('t')
+    mergeImport(b, parseKifu(SAMPLE_KIF))
+    const first = b.rootId
+    b.srs[first] = grade(undefined, true, t0) // 1日後
+    expect(dueItems([b], t0).length).toBe(0)
+    expect(dueItems([b], t0 + 2 * 86400000).map((x) => x.nodeId)).toEqual([first])
+  })
+})

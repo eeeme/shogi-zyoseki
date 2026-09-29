@@ -90,3 +90,21 @@ export function bookStats(book: Book, side: 0 | 1, now = Date.now()) {
   }
   return { total: q.length, due, fresh, good }
 }
+
+export interface DueItem {
+  bookId: string
+  nodeId: string
+  due: number
+}
+
+/** 復習日が来た局面（全手番）。古い順 */
+export function dueItems(books: Book[], now = Date.now()): DueItem[] {
+  const out: DueItem[] = []
+  for (const b of books) {
+    for (const [id, s] of Object.entries(b.srs)) {
+      const n = b.nodes[id]
+      if (n && n.children.length && s.due <= now) out.push({ bookId: b.id, nodeId: id, due: s.due })
+    }
+  }
+  return out.sort((a, b) => a.due - b.due)
+}

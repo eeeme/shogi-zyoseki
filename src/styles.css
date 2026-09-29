@@ -215,3 +215,11 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .pal small { font-size: 10px; color: var(--muted); }
 .pal.selected { border-color: var(--accent); background: var(--accent-soft); }
 .pal:disabled { opacity: .3; }
+
+/* 復習 */
+.review-btn { border-color: var(--bad); color: var(--text); background: rgba(208,103,95,.08); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; }
+.review-btn .count { background: var(--bad); color: #fff; border-radius: 12px; min-width: 24px; height: 24px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
+.review-book { text-align: center; margin: -4px 0 0; }
+.review-done { align-items: center; padding: 32px 16px; }
+.review-done .big { font-size: 26px; margin: 0; letter-spacing: .2em; }
+.review-done .tally { font-size: 18px; }
