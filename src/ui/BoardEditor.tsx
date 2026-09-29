@@ -70,7 +70,10 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
       if (box[base] + freed <= 0) return toast('駒箱にその駒が残っていません')
       if (base === 'OU' && kingOf(pos, color, sq)) return toast(`${color === 0 ? '先手' : '後手'}の玉は1枚までです`)
       if (!canStand(t, color, sq)) return
-      return update((p) => { p.board[sq] = { t, c: color } })
+      update((p) => { p.board[sq] = { t, c: color } })
+      // 駒箱が空になったら選択を外す
+      if (box[base] + freed - 1 <= 0) setSel(null)
+      return
     }
     if (sel?.kind === 'sq') {
       if (sel.sq === sq) return setSel(null)
@@ -200,7 +203,7 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
               <button
                 key={t}
                 className={`pal ${sel?.kind === 'palette' && sel.t === t ? 'selected' : ''} ${color === 1 ? 'gote' : ''}`}
-                disabled={box[t] <= 0}
+                disabled={box[t] <= 0 && !(sel?.kind === 'palette' && sel.t === t)}
                 onClick={() => setSel(sel?.kind === 'palette' && sel.t === t ? null : { kind: 'palette', t })}
               >
                 <span className={`piece-mini ${shown !== t ? 'promoted' : ''}`}>{PIECE_CHAR[shown]}</span>
