@@ -101,6 +101,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <button className="btn primary" onClick={() => onDrill(node.id)}>練習</button>
       </header>
 
+      <div className="stage">
       <Board
         pos={pos}
         flipped={flipped}
@@ -108,16 +109,6 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         lastFrom={lastMove?.from ?? null}
         onMove={onMove}
         onTapSide={edit ? undefined : (side) => (side === 'right' ? goFirstChild() : node.parent && setNodeId(node.parent))}
-        toolbar={
-          <>
-            <button className={`icon-btn ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)} aria-label="編集" aria-pressed={edit}>
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
-            </button>
-            <button className={`icon-btn ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)} aria-label="盤反転" aria-pressed={flipped}>
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 20V5M4 9l4-4 4 4M16 4v15M12 15l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
-            </button>
-          </>
-        }
       />
 
       <div className="nav">
@@ -126,6 +117,14 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <span className="nav-now">{node.move ? pathLabels.at(-1)?.label : '開始局面'}<small>{path.length - 1}手目</small></span>
         <button className="btn" onClick={goFirstChild} aria-label="本線で1手進む">▶</button>
         <button className="btn" onClick={goLeaf} aria-label="本線の最後へ">⏭</button>
+        <span className="nav-gap" />
+        <button className={`icon-btn ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)} aria-label="編集" aria-pressed={edit}>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
+        </button>
+        <button className={`icon-btn ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)} aria-label="盤反転" aria-pressed={flipped}>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 20V5M4 9l4-4 4 4M16 4v15M12 15l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
+        </button>
+      </div>
       </div>
 
       <section className="panel next-panel">

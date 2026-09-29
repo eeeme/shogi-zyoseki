@@ -247,3 +247,11 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .icon-btn.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 /* 次の手は画面の下へ寄せる */
 .next-panel { flex: none; margin-top: auto; min-height: 96px; max-height: 38dvh; }
+
+/* 盤とナビを残りの高さの中央に置く */
+.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+.nav { row-gap: 6px; }
+.nav-gap { grid-column: 1 / span 3; }
+.nav .icon-btn { width: 100%; height: auto; min-height: 40px; border-radius: 10px; background: var(--surface-2); color: var(--text); }
+.nav .icon-btn.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.next-panel { margin-top: 0; }
