@@ -177,17 +177,9 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
   const panel = (
     <div className="drawer-body">
       <div className="drawer-head">
-        <span>手順と定跡ツリー</span>
-        <span className="muted">右へスワイプで閉じる</span>
+        <span>定跡ツリー</span>
+        <span className="muted">ツリーは指で上下左右に動かせます</span>
       </div>
-      <p className="line">
-        {pathLabels.length === 0 && <span className="muted">開始局面</span>}
-        {pathLabels.map((p) => (
-          <button key={p.id} className={`line-move ${p.id === node.id ? 'on' : ''}`} onClick={() => setNodeId(p.id)}>
-            {p.label}
-          </button>
-        ))}
-      </p>
       <TreeView book={book} rev={rev} currentId={node.id} onSelect={setNodeId} />
       <p className="legend muted"><i className="lg due">●</i>要復習 <i className="lg learning">●</i>学習中 <i className="lg good">●</i>定着　＊メモ　⇄合流</p>
       <div className="row gap">

@@ -177,8 +177,8 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .drawer-body { height: 100%; display: flex; flex-direction: column; gap: 10px; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
 .drawer-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
 .drawer-head .muted { font-size: 11px; }
-.drawer-body .line { max-height: 88px; overflow-y: auto; flex: none; }
-.drawer-body .tree-box { flex: 1; min-height: 0; max-height: none; overflow-x: hidden; overflow-y: auto; }
+.drawer-body .tree-box { flex: 1; min-height: 0; max-height: none; overflow: auto; touch-action: none; }
+.drawer-body .tree-box * { touch-action: none; }
 .drawer-handle { position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 29; width: 22px; padding: 14px 0; border-radius: 10px 0 0 10px; background: var(--surface-2); border: 1px solid var(--line-strong); border-right: 0; color: var(--muted); font-size: 11px; display: flex; justify-content: center; cursor: pointer; }
 .drawer-handle span { writing-mode: vertical-rl; letter-spacing: .2em; }
 .tree-node text { font-size: 12px; }
