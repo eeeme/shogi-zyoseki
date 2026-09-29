@@ -71,21 +71,20 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
       if (base === 'OU' && kingOf(pos, color, sq)) return toast(`${color === 0 ? '先手' : '後手'}の玉は1枚までです`)
       if (!canStand(t, color, sq)) return
       update((p) => { p.board[sq] = { t, c: color } })
-      // 駒箱が空になったら選択を外す
-      if (box[base] + freed - 1 <= 0) setSel(null)
-      return
+      // 置いたら選択を外す（1枚ずつ選んで置く）
+      return setSel(null)
     }
     if (sel?.kind === 'sq') {
       if (sel.sq === sq) return setSel(null)
       const moving = pos.board[sel.sq]!
       if (!canStand(moving.t, moving.c, sq)) return
       update((p) => { p.board[sq] = moving; p.board[sel.sq] = null })
-      return setSel({ kind: 'sq', sq })
+      return setSel(null)
     }
     if (sel?.kind === 'hand') {
       if (!canStand(sel.t, sel.c, sq)) return
       update((p) => { p.board[sq] = { t: sel.t, c: sel.c }; p.hands[sel.c][sel.t]-- })
-      return setSel(pos.hands[sel.c][sel.t] > 1 ? sel : null)
+      return setSel(null)
     }
     if (here) setSel({ kind: 'sq', sq })
   }
@@ -100,7 +99,8 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
     if (sel?.kind === 'palette') {
       if (sel.t === 'OU') return toast('玉は持駒にできません')
       if (box[sel.t] <= 0) return toast('駒箱にその駒が残っていません')
-      return update((p) => { p.hands[c][sel.t as HandType]++ })
+      update((p) => { p.hands[c][sel.t as HandType]++ })
+      return setSel(null)
     }
     if (sel?.kind === 'sq') {
       const piece = pos.board[sel.sq]!
