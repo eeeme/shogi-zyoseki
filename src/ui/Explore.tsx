@@ -100,19 +100,6 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
     setNodeId(cur.id)
   }
 
-  const download = () => {
-    try {
-      const kif = exportKif(book)
-      const blob = new Blob([kif], { type: 'text/plain;charset=utf-8' })
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `${book.name.replace(/[\\/:*?"<>|]/g, '_')}.kifu`
-      a.click()
-      URL.revokeObjectURL(a.href)
-    } catch (e) {
-      toast((e as Error).message)
-    }
-  }
 
   const screen = (
     <div className="screen fit">
@@ -232,7 +219,16 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
       <TreeView book={book} rev={rev} currentId={node.id} onSelect={setNodeId} />
       <div className="row gap">
         <button className="chip" onClick={onImport}>棋譜を取込</button>
-        <button className="chip" onClick={download}>KIF書出</button>
+        <button
+          className="chip"
+          onClick={async () => {
+            try {
+              toast((await copyText(exportKif(book))) ? 'KIFをコピーしました' : 'コピーできませんでした')
+            } catch (e) {
+              toast((e as Error).message)
+            }
+          }}
+        >KIFをコピー</button>
       </div>
     </div>
   )
