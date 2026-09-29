@@ -195,7 +195,6 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
             {sel.kind === 'sq' && <button className="chip" onClick={togglePromote}>成／不成</button>}
             {sel.kind === 'sq' && <button className="chip" onClick={flipColor}>先後反転</button>}
             <button className="chip" onClick={toBox}>駒箱へ</button>
-            <button className="chip" onClick={() => setSel(null)}>選択解除</button>
           </div>
         ) : null}
 
