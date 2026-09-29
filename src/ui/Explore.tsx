@@ -107,6 +107,17 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         lastTo={lastMove?.to ?? null}
         lastFrom={lastMove?.from ?? null}
         onMove={onMove}
+        onTapSide={edit ? undefined : (side) => (side === 'right' ? goFirstChild() : node.parent && setNodeId(node.parent))}
+        toolbar={
+          <>
+            <button className={`icon-btn ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)} aria-label="編集" aria-pressed={edit}>
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
+            </button>
+            <button className={`icon-btn ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)} aria-label="盤反転" aria-pressed={flipped}>
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 20V5M4 9l4-4 4 4M16 4v15M12 15l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
+            </button>
+          </>
+        }
       />
 
       <div className="nav">
@@ -118,13 +129,6 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
       </div>
 
       <section className="panel next-panel">
-          <div className="panel-head">
-            <span>次の手 {children.length > 1 && <em className="fork">分岐 {children.length}</em>}</span>
-            <div className="row gap">
-              <button className={`chip ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)}>盤反転</button>
-              <button className={`chip ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)}>編集</button>
-            </div>
-          </div>
           <div className="choices">
             {children.map((c, i) => (
               <button key={c.id} className={`choice ${i === 0 ? 'main' : ''}`} onClick={() => setNodeId(c.id)}>

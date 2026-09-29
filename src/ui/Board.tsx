@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import {
   type Color, type HandType, type Move, type Pos, HAND_TYPES, fileOf, generateMoves, idx, rankOf,
 } from '../shogi/core'
@@ -13,6 +13,10 @@ interface Props {
   hidePieces?: boolean
   interactive?: boolean
   onMove?: (m: Move) => void
+  /** 参照用：指定すると盤のタップは指し手ではなく、盤の左右どちら側かを渡す */
+  onTapSide?: (side: 'left' | 'right') => void
+  /** 下の持駒欄の右端に置くボタン類 */
+  toolbar?: ReactNode
   /** 盤面編集用：指定すると指し手のルールを使わず、タップをそのまま渡す */
   edit?: {
     onSquare: (sq: number) => void
@@ -25,7 +29,7 @@ interface Props {
 
 type Sel = { kind: 'sq'; sq: number } | { kind: 'hand'; t: HandType } | null
 
-export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces, interactive = true, onMove, edit }: Props) {
+export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces, interactive = true, onMove, edit, onTapSide, toolbar }: Props) {
   const [sel, setSel] = useState<Sel>(null)
   const [promo, setPromo] = useState<Move[] | null>(null)
   const [prevPos, setPrevPos] = useState(pos)
@@ -126,7 +130,18 @@ export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces
                   (flipped ? (f === 3 || f === 6) && (r === 4 || r === 7) : (f === 4 || f === 7) && (r === 3 || r === 6)) ? 'star' : '',
                 ].join(' ')
                 return (
-                  <button key={sq} className={cls} onClick={() => tapSquare(sq)} aria-label={`${fileOf(sq)}${rankOf(sq)}`}>
+                  <button
+                    key={sq}
+                    className={cls}
+                    onClick={(e) => {
+                      if (onTapSide) {
+                        const r = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect()
+                        return onTapSide(e.clientX < r.left + r.width / 2 ? 'left' : 'right')
+                      }
+                      tapSquare(sq)
+                    }}
+                    aria-label={`${fileOf(sq)}${rankOf(sq)}`}
+                  >
                     {p && !hidePieces && (
                       <span className={`piece ${p.c !== bottom ? 'up' : ''} ${['TO', 'NY', 'NK', 'NG', 'UM', 'RY'].includes(p.t) ? 'promoted' : ''}`}>
                         {PIECE_CHAR[p.t]}
@@ -149,7 +164,7 @@ export function Board({ pos, flipped = false, lastTo, lastFrom, hint, hidePieces
           </div>
         )}
       </div>
-      {hand(bottom)}
+      {toolbar ? <div className="hand-row">{hand(bottom)}<div className="board-tools">{toolbar}</div></div> : hand(bottom)}
     </div>
   )
 }
