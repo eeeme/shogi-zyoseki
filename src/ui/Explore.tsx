@@ -6,7 +6,7 @@ import {
 } from '../book/book'
 import { Board } from './Board'
 import { TreeView } from './TreeView'
-import { Pager } from './Pager'
+import { SideDrawer } from './SideDrawer'
 import { exportKif } from '../kifu/export'
 
 interface Props {
@@ -24,6 +24,7 @@ interface Props {
 export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, toast }: Props) {
   const [edit, setEdit] = useState(false)
   const [flipped, setFlipped] = useState(false)
+  const [drawer, setDrawer] = useState(false)
 
   const node = book.nodes[nodeId] ?? book.nodes[book.rootId]
   const { pos, prevTo } = useMemo(() => positionAt(book, node.id), [book, node.id, rev])
@@ -84,7 +85,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
     }
   }
 
-  return (
+  const screen = (
     <div className="screen fit">
       <header className="bar">
         <button className="btn ghost" onClick={onBack}>‹ 一覧</button>
@@ -114,8 +115,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <button className="btn" onClick={goLeaf} aria-label="本線の最後へ">⏭</button>
       </div>
 
-      <Pager labels={['次の手', 'ツリー', '手順']} storageKey="zyoseki.explorePage">
-        <div className="page-body">
+      <section className="panel next-panel">
           <div className="panel-head">
             <span>次の手 {children.length > 1 && <em className="fork">分岐 {children.length}</em>}</span>
             <div className="row gap">
@@ -170,28 +170,32 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
               }
             }}
           />
-        </div>
-
-        <div className="page-body page-tree">
-          <TreeView book={book} rev={rev} currentId={node.id} onSelect={setNodeId} />
-          <p className="legend muted"><i className="lg due">●</i>要復習 <i className="lg learning">●</i>学習中 <i className="lg good">●</i>定着　＊メモ　⇄合流</p>
-        </div>
-
-        <div className="page-body">
-          <p className="line">
-            {pathLabels.length === 0 && <span className="muted">開始局面</span>}
-            {pathLabels.map((p) => (
-              <button key={p.id} className={`line-move ${p.id === node.id ? 'on' : ''}`} onClick={() => setNodeId(p.id)}>
-                {p.label}
-              </button>
-            ))}
-          </p>
-          <div className="row gap">
-            <button className="chip" onClick={onImport}>棋譜を取込</button>
-            <button className="chip" onClick={download}>KIF書出</button>
-          </div>
-        </div>
-      </Pager>
+      </section>
     </div>
   )
+
+  const panel = (
+    <div className="drawer-body">
+      <div className="drawer-head">
+        <span>手順と定跡ツリー</span>
+        <span className="muted">右へスワイプで閉じる</span>
+      </div>
+      <p className="line">
+        {pathLabels.length === 0 && <span className="muted">開始局面</span>}
+        {pathLabels.map((p) => (
+          <button key={p.id} className={`line-move ${p.id === node.id ? 'on' : ''}`} onClick={() => setNodeId(p.id)}>
+            {p.label}
+          </button>
+        ))}
+      </p>
+      <TreeView book={book} rev={rev} currentId={node.id} onSelect={setNodeId} />
+      <p className="legend muted"><i className="lg due">●</i>要復習 <i className="lg learning">●</i>学習中 <i className="lg good">●</i>定着　＊メモ　⇄合流</p>
+      <div className="row gap">
+        <button className="chip" onClick={onImport}>棋譜を取込</button>
+        <button className="chip" onClick={download}>KIF書出</button>
+      </div>
+    </div>
+  )
+
+  return <SideDrawer open={drawer} onOpenChange={setDrawer} handleLabel="ツリー" area={screen}>{panel}</SideDrawer>
 }

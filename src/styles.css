@@ -163,20 +163,22 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--surface-2); border: 1px solid var(--line-strong); padding: 10px 16px; border-radius: 12px; font-size: 13px; max-width: calc(100vw - 32px); z-index: 20; }
 
-/* 閲覧画面：1画面に収め、盤の下を横スワイプで切り替える */
+/* 閲覧画面：1画面に収める */
 .screen.fit { height: 100dvh; overflow: hidden; padding-bottom: calc(8px + env(safe-area-inset-bottom)); gap: 8px; }
 .screen.fit .nav .btn { min-height: 40px; }
-.pager { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
-.pager-dots { display: flex; justify-content: center; gap: 18px; padding: 8px 0 6px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); flex: none; }
-.pager-dots span { position: relative; padding-bottom: 4px; cursor: pointer; }
-.pager-dots span.on { color: var(--text); }
-.pager-dots span.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); border-radius: 1px; }
-.pager-track { flex: 1; min-height: 0; display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-.pager-track::-webkit-scrollbar { display: none; }
-.pager-page { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; scroll-snap-stop: always; overflow-y: auto; overscroll-behavior-y: contain; }
-.page-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; min-height: 100%; }
-.page-tree { padding: 8px; gap: 6px; height: 100%; }
-.page-tree .tree-box { flex: 1; max-height: none; min-height: 0; }
-/* ツリーは縦だけ指でスクロール。横スワイプはページ切替に渡し、横位置は選択中の手に自動で追従 */
-.page-tree .tree-box { overflow-x: hidden; overflow-y: auto; }
+.next-panel { flex: 1; min-height: 0; overflow-y: auto; }
+
+/* 右から重なるパネル（盤は動かない） */
+.drawer-area { position: relative; }
+/* スクロール要素ごとに touch-action が区切られるため、子孫すべてで横の指の動きをアプリ側に渡す */
+.drawer-area, .drawer-area * { touch-action: pan-y pinch-zoom; }
+.drawer-backdrop { position: fixed; inset: 0; background: #000; z-index: 30; transition: opacity .26s; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(80vw, 400px); background: var(--surface); border-left: 1px solid var(--line-strong); z-index: 31; box-shadow: -12px 0 32px rgba(0,0,0,.45); will-change: transform; touch-action: pan-y; }
+.drawer-body { height: 100%; display: flex; flex-direction: column; gap: 10px; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
+.drawer-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; }
+.drawer-head .muted { font-size: 11px; }
+.drawer-body .line { max-height: 88px; overflow-y: auto; flex: none; }
+.drawer-body .tree-box { flex: 1; min-height: 0; max-height: none; overflow-x: hidden; overflow-y: auto; }
+.drawer-handle { position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 29; width: 22px; padding: 14px 0; border-radius: 10px 0 0 10px; background: var(--surface-2); border: 1px solid var(--line-strong); border-right: 0; color: var(--muted); font-size: 11px; display: flex; justify-content: center; cursor: pointer; }
+.drawer-handle span { writing-mode: vertical-rl; letter-spacing: .2em; }
 .tree-node text { font-size: 12px; }
