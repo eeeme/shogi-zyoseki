@@ -193,25 +193,23 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
             <button className="chip" onClick={() => setNodeId(transposed[0])}>⇄ 合流 {transposed.length}</button>
           )}
           {edit && (
-            <div className="row gap wrap">
-              <button className="btn" onClick={() => onEditPosition(toSfen(pos))}>この局面から盤面編集</button>
-            </div>
-          )}
-          {node.move && edit && (
-            <div className="row gap wrap">
-              {book.nodes[node.parent!].children[0] !== node.id && (
-                <button className="btn" onClick={() => { promoteToMain(book, node.id); onChange() }}>この手を本線にする</button>
+            <div className="edit-actions">
+              <button className="chip" onClick={() => onEditPosition(toSfen(pos))}>この局面から新規作成</button>
+              {node.move && book.nodes[node.parent!].children[0] !== node.id && (
+                <button className="chip" onClick={() => { promoteToMain(book, node.id); onChange() }}>本線にする</button>
               )}
-              <button
-                className="btn danger"
-                onClick={() => {
-                  if (!confirm('この手以降をすべて削除しますか？')) return
-                  const p = node.parent!
-                  deleteSubtree(book, node.id)
-                  onChange()
-                  setNodeId(p)
-                }}
-              >この手以降を削除</button>
+              {node.move && (
+                <button
+                  className="chip danger"
+                  onClick={() => {
+                    if (!confirm('この手以降をすべて削除しますか？')) return
+                    const p = node.parent!
+                    deleteSubtree(book, node.id)
+                    onChange()
+                    setNodeId(p)
+                  }}
+                >この手以降を削除</button>
+              )}
             </div>
           )}
       </section>
