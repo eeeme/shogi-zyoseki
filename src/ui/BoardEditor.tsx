@@ -148,9 +148,16 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
     return null
   }
 
+  const [confirming, setConfirming] = useState(false)
+  // 「作成」→ 手番と名前を決めてから作る
   const create = () => {
     const err = forSearch ? null : validate()
     if (err) return toast(err)
+    setSel(null)
+    setConfirming(true)
+  }
+  const finish = () => {
+    setConfirming(false)
     onCreate(name.trim() || '自由配置の局面', toSfen(pos))
   }
 
@@ -214,13 +221,7 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
         </div>
 
         <div className="row gap wrap">
-          <div className="seg small grow">
-            <button className={pos.turn === 0 ? 'on' : ''} onClick={() => update((p) => { p.turn = 0 })}>先手番</button>
-            <button className={pos.turn === 1 ? 'on' : ''} onClick={() => update((p) => { p.turn = 1 })}>後手番</button>
-          </div>
           <button className={`chip ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)}>盤反転</button>
-        </div>
-        <div className="row gap wrap">
           <button className="chip" onClick={() => { setPos(parseSfen(START_SFEN)); setSel(null) }}>平手に戻す</button>
           <button className="chip" onClick={() => { setPos(emptyPos()); setSel(null) }}>全部駒箱へ</button>
           <button
@@ -235,8 +236,24 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
             }}
           >後手玉だけ残す</button>
         </div>
-        {!forSearch && <input placeholder="名前" value={name} onChange={(e) => setName(e.target.value)} />}
       </section>
+
+      {confirming && (
+        <div className="sheet-backdrop" onClick={() => setConfirming(false)}>
+          <div className="sheet form" onClick={(e) => e.stopPropagation()}>
+            <p className="sheet-title">{forSearch ? '検索' : '作成'}</p>
+            <div className="seg">
+              <button className={pos.turn === 0 ? 'on' : ''} onClick={() => update((p) => { p.turn = 0 })}>☗ 先手番</button>
+              <button className={pos.turn === 1 ? 'on' : ''} onClick={() => update((p) => { p.turn = 1 })}>☖ 後手番</button>
+            </div>
+            {!forSearch && <input placeholder="名前" value={name} onChange={(e) => setName(e.target.value)} autoFocus />}
+            <div className="row gap">
+              <button className="btn grow" onClick={() => setConfirming(false)}>キャンセル</button>
+              <button className="btn primary grow" onClick={finish}>{forSearch ? '検索' : '作成'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
