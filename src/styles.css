@@ -306,3 +306,7 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .edit-actions .chip { flex: none; white-space: nowrap; }
 .chip.danger { color: var(--bad); border-color: rgba(208,103,95,.5); }
 .stage { min-height: min-content; }
+/* 盤面編集も1画面に収め、盤は残りの高さの中央へ */
+.panel.editor { flex: none; gap: 10px; }
+.screen.fit .panel.editor { margin-bottom: 4px; }
+.sel-row { align-items: center; } .sel-row .sel-label { flex: none; white-space: nowrap; }

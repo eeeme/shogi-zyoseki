@@ -166,13 +166,14 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
       : sel?.kind === 'hand' ? `${sel.c === 0 ? '☗' : '☖'}持駒の${PIECE_CHAR[sel.t]}` : ''
 
   return (
-    <div className="screen">
+    <div className="screen fit">
       <header className="bar">
         <button className="btn ghost" onClick={onBack}>‹ 戻る</button>
         <h1 className="bar-title">{forSearch ? '局面検索' : '盤面編集'}</h1>
         <button className="btn primary" onClick={create}>{forSearch ? '検索' : '作成'}</button>
       </header>
 
+      <div className="stage">
       <Board
         pos={pos}
         flipped={flipped}
@@ -185,9 +186,11 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
         }}
       />
 
+      </div>
+
       <section className="panel editor">
         {sel?.kind === 'sq' || sel?.kind === 'hand' ? (
-          <div className="row gap wrap">
+          <div className="edit-actions sel-row">
             <span className="sel-label">{selectedLabel}</span>
             {sel.kind === 'sq' && <button className="chip" onClick={togglePromote}>成／不成</button>}
             {sel.kind === 'sq' && <button className="chip" onClick={flipColor}>先後反転</button>}
@@ -220,7 +223,7 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
           })}
         </div>
 
-        <div className="row gap wrap">
+        <div className="edit-actions">
           <button className={`chip ${flipped ? 'on' : ''}`} onClick={() => setFlipped(!flipped)}>盤反転</button>
           <button className="chip" onClick={() => { setPos(parseSfen(START_SFEN)); setSel(null) }}>平手に戻す</button>
           <button className="chip" onClick={() => { setPos(emptyPos()); setSel(null) }}>全部駒箱へ</button>
