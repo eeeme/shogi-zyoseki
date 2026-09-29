@@ -197,3 +197,19 @@ describe('次の手の出現率', () => {
     expect(nextMoveStats(idx, p)).toBeNull()
   })
 })
+
+describe('局面テキスト', () => {
+  it('局面図・SFEN・手順を含み、局面図はそのまま取り込み直せる', async () => {
+    const { positionText } = await import('./share')
+    const b = newBook('t')
+    mergeImport(b, parseKifu(SAMPLE_KIF))
+    const id = followLine(b, ['7g7f', '3c3d']).nodeId
+    const txt = positionText(b, id)
+    expect(txt).toContain('2手目（△３四歩まで）')
+    expect(txt).toContain('先手番')
+    expect(txt).toContain('手順：▲７六歩 △３四歩')
+    expect(txt).toMatch(/SFEN：sfen \S+ b - 1/)
+    const again = parseKifu(txt)
+    expect(toSfen(parseSfen(again.rootSfen))).toBe(toSfen(positionAt(b, id).pos))
+  })
+})

@@ -9,6 +9,7 @@ import { TreeView } from './TreeView'
 import { Sheets, type SheetOpen } from './Sheets'
 import { type StatsIndex, nextMoveStats } from '../book/stats'
 import { metaLine } from './Forms'
+import { copyText, positionText } from '../kifu/share'
 import { exportKif } from '../kifu/export'
 
 interface Props {
@@ -152,7 +153,13 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <button className={`icon-btn ${marked ? 'on' : ''}`} onClick={toggleMark} aria-label="しおり" aria-pressed={marked}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z" fill={marked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
         </button>
-        <span className="nav-gap" />
+        <button
+          className="icon-btn"
+          onClick={async () => toast((await copyText(positionText(book, node.id))) ? '局面をコピーしました' : 'コピーできませんでした')}
+          aria-label="局面をテキストでコピー"
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M5 15V6a2 2 0 0 1 2-2h8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+        </button>
         <button className={`icon-btn ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)} aria-label="編集" aria-pressed={edit}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
         </button>
