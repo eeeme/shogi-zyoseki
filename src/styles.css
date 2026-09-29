@@ -289,3 +289,14 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .mini-piece.promoted { fill: var(--bad); }
 .mini-hand { fill: var(--muted); font-size: 10px; font-family: inherit; }
 .icon-btn:disabled, .btn:disabled { opacity: .3; cursor: default; }
+
+/* 次の手の出現率・しおり */
+.nav-gap { grid-column: 3; }
+.choice { flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 6px 14px; }
+.choice-move { display: flex; align-items: center; gap: 6px; }
+.choice-stat { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.choice.other { border-style: dashed; opacity: .75; }
+.marks { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.marks::-webkit-scrollbar { display: none; }
+.mark-card { flex: none; width: 100px; display: flex; flex-direction: column; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+.mark-card span { font-size: 11px; color: var(--muted); width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }

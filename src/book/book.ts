@@ -39,6 +39,7 @@ export interface Book {
   name: string
   folderId?: string // 未指定 = フォルダに入れない（一覧の直下）
   tags?: string[]
+  bookmarks?: string[] // しおりを付けた局面のノードID
   meta?: GameMeta
   rootSfen: string
   rootId: string

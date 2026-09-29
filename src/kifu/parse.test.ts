@@ -166,3 +166,34 @@ describe('マージ', () => {
     expect(a.nodes[aNode].comment).toBe('元のメモ\n別のメモ')
   })
 })
+
+describe('次の手の出現率', () => {
+  it('本ごとに数え、2局未満は出さず、勝率は勝敗のある本だけで計算する', async () => {
+    const { buildStatsIndex, nextMoveStats } = await import('../book/stats')
+    const g = (moves: string, result?: string) => {
+      const b = newBook('g')
+      const t = parseKifu(moves)
+      mergeImport(b, t)
+      if (result) b.meta = { result }
+      return b
+    }
+    const books = [
+      g('   1 ７六歩(77)\n   2 ３四歩(33)\n', '先手勝ち'),
+      g('   1 ７六歩(77)\n   2 ８四歩(83)\n', '先手勝ち'),
+      g('   1 ７六歩(77)\n   2 ３四歩(33)\n', '先手勝ち'),
+      g('   1 ２六歩(27)\n'), // 研究用（勝敗なし）
+    ]
+    const idx = buildStatsIndex(books)
+    const root = nextMoveStats(idx, startPos())!
+    expect(root[0]).toMatchObject({ usi: '7g7f', count: 3, rate: 0.75, winRate: 1 })
+    expect(root[1]).toMatchObject({ usi: '2g2f', count: 1, winRate: null })
+    const after = nextMoveStats(idx, applyMove(startPos(), usiToMove('7g7f')))!
+    // 後手の手：先手勝ちの本なので勝率0
+    expect(after[0]).toMatchObject({ usi: '3c3d', count: 2, winRate: 0 })
+    // 1局しかない局面は出さない
+    let p = startPos()
+    for (const u of ['7g7f', '8c8d']) p = applyMove(p, usiToMove(u))
+    expect(nextMoveStats(idx, applyMove(startPos(), usiToMove('2g2f')))).toBeNull()
+    expect(nextMoveStats(idx, p)).toBeNull()
+  })
+})

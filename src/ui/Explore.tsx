@@ -7,6 +7,7 @@ import {
 import { Board } from './Board'
 import { TreeView } from './TreeView'
 import { Sheets, type SheetOpen } from './Sheets'
+import { type StatsIndex, nextMoveStats } from '../book/stats'
 import { metaLine } from './Forms'
 import { exportKif } from '../kifu/export'
 
@@ -25,10 +26,11 @@ interface Props {
   fromSearch?: boolean
   /** 一致した局面から開いた時だけ：検索元とマージ */
   onMerge?: () => void
+  stats: StatsIndex
   toast: (s: string) => void
 }
 
-export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, onSearch, fromSearch, onMerge, toast }: Props) {
+export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDrill, onImport, onEditPosition, onSearch, fromSearch, onMerge, stats, toast }: Props) {
   // 空の本は最初から編集モード
   const [edit, setEdit] = useState(() => book.nodes[book.rootId].children.length === 0)
   const [flipped, setFlipped] = useState(false)
@@ -52,8 +54,26 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
 
   const children = node.children.map((c) => {
     const m = usiToMove(book.nodes[c].move!)
-    return { id: c, label: moveToJa(pos, m, prevTo), comment: book.nodes[c].comment }
+    return { id: c, usi: book.nodes[c].move!, label: moveToJa(pos, m, prevTo), comment: book.nodes[c].comment }
   })
+  // 全部の本の集計（2局未満の局面は null）
+  const moveStats = useMemo(() => nextMoveStats(stats, pos), [stats, pos])
+  const statOf = (usi: string) => moveStats?.find((s) => s.usi === usi)
+  const statText = (usi: string) => {
+    const s = statOf(usi)
+    if (!s) return ''
+    return `${Math.round(s.rate * 100)}%・${s.count}局${s.winRate !== null ? `・勝率${Math.round(s.winRate * 100)}%` : ''}`
+  }
+  // この本には無いが、他の本で指されている手
+  const others = (moveStats ?? []).filter((s) => !node.children.some((c) => book.nodes[c].move === s.usi))
+  const marked = book.bookmarks?.includes(node.id) ?? false
+  const toggleMark = () => {
+    const set = new Set(book.bookmarks ?? [])
+    if (set.has(node.id)) set.delete(node.id)
+    else set.add(node.id)
+    book.bookmarks = set.size ? [...set] : undefined
+    onChange()
+  }
 
   const transposed = useMemo(() => {
     const idx = transpositionIndex(book)
@@ -129,6 +149,9 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
         <button className="icon-btn" onClick={() => onSearch(toSfen(pos))} aria-label="この局面を検索" disabled={fromSearch}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M15 15l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
         </button>
+        <button className={`icon-btn ${marked ? 'on' : ''}`} onClick={toggleMark} aria-label="しおり" aria-pressed={marked}>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 4h10v16l-5-4-5 4z" fill={marked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+        </button>
         <span className="nav-gap" />
         <button className={`icon-btn ${edit ? 'on' : ''}`} onClick={() => setEdit(!edit)} aria-label="編集" aria-pressed={edit}>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z M14 6l4 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" strokeLinecap="round" /></svg>
@@ -143,8 +166,26 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
           <div className="choices">
             {children.map((c, i) => (
               <button key={c.id} className={`choice ${i === 0 ? 'main' : ''}`} onClick={() => setNodeId(c.id)}>
-                {c.label}
-                {i === 0 && children.length > 1 && <small>本線</small>}
+                <span className="choice-move">
+                  {c.label}
+                  {i === 0 && children.length > 1 && <small>本線</small>}
+                </span>
+                {statText(c.usi) && <span className="choice-stat">{statText(c.usi)}</span>}
+              </button>
+            ))}
+            {others.map((s) => (
+              <button
+                key={s.usi}
+                className="choice other"
+                onClick={() => {
+                  if (!edit) return toast('✏で追加')
+                  const r = addChild(book, node.id, usiToMove(s.usi))
+                  onChange()
+                  setNodeId(r.id)
+                }}
+              >
+                <span className="choice-move">{moveToJa(pos, usiToMove(s.usi), prevTo)}</span>
+                <span className="choice-stat">{statText(s.usi)}</span>
               </button>
             ))}
           </div>

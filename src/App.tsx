@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { type Book, type Folder, cloneBook, extractSubtree, mergeImport, newBook, uid } from './book/book'
 import {
   deleteBook, deleteFolder, loadBooks, loadFolders, markSampleInstalled, sampleInstalled, saveBook, saveFolder,
@@ -13,6 +13,10 @@ import { BoardEditor } from './ui/BoardEditor'
 import { ActionSheet, type SheetItem } from './ui/ActionSheet'
 import { Review } from './ui/Review'
 import { Search } from './ui/Search'
+import { buildStatsIndex } from './book/stats'
+import { MiniBoard } from './ui/MiniBoard'
+import { depthOf, positionAt } from './book/book'
+import { toSfen } from './shogi/core'
 import { MetaSheet, TagSheet, metaLine } from './ui/Forms'
 
 interface Origin { bookId: string; nodeId: string }
@@ -63,6 +67,10 @@ export default function App() {
     setBooks((bs) => (bs ? [b, ...bs.filter((x) => x.id !== b.id)] : [b]))
   }, [])
 
+  // 次の手の出現率の集計（本が変わるたびに作り直す）
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stats = useMemo(() => buildStatsIndex(books ?? []), [books, rev])
+
   if (!books) return <div className="screen center muted">読み込み中…</div>
 
   const bookOf = (id: string) => books.find((b) => b.id === id)
@@ -86,6 +94,7 @@ export default function App() {
           setScreen({ kind: 'home' })
         }}
         fromSearch={!!screen.via}
+        stats={stats}
         onMerge={screen.via?.exact ? () => {
           const via = screen.via!
           const tree = extractSubtree(book, via.hitNodeId)
@@ -191,6 +200,7 @@ export default function App() {
         folderId={inFolder ?? null}
         setFolderId={setFolderId}
         onOpen={(b) => setScreen({ kind: 'explore', bookId: b.id, nodeId: b.rootId })}
+        onOpenAt={(b, nodeId) => setScreen({ kind: 'explore', bookId: b.id, nodeId })}
         onDrill={(b) => setScreen({ kind: 'drill', bookId: b.id, nodeId: b.rootId })}
         onNew={() => {
           const name = prompt('名前', '新しい定跡')
@@ -251,6 +261,7 @@ interface HomeProps {
   folderId: string | null
   setFolderId: (id: string | null) => void
   onOpen: (b: Book) => void
+  onOpenAt: (b: Book, nodeId: string) => void
   onDrill: (b: Book) => void
   onNew: () => void
   onEditor: () => void
@@ -274,6 +285,8 @@ function Home(p: HomeProps) {
   const allTags = [...new Set(books.flatMap((b) => b.tags ?? []))].sort((a, b) => a.localeCompare(b, 'ja'))
   const viewTags = [...new Set(inView.flatMap((b) => b.tags ?? []))].sort((a, b) => a.localeCompare(b, 'ja'))
   const activeTag = tag && viewTags.includes(tag) ? tag : null
+  // しおり（表示中の範囲の本から、更新が新しい順）
+  const marks = inView.flatMap((b) => (b.bookmarks ?? []).filter((id) => b.nodes[id]).map((nodeId) => ({ book: b, nodeId })))
   // タグで絞り込み中は、一覧の直下でもフォルダをまたいで表示する
   const shown = activeTag
     ? inView.filter((b) => b.tags?.includes(activeTag))
@@ -357,6 +370,18 @@ function Home(p: HomeProps) {
         <div className="tag-list filter">
           {viewTags.map((t) => (
             <button key={t} className={`tag ${activeTag === t ? 'on' : ''}`} onClick={() => setTag(activeTag === t ? null : t)}>#{t}</button>
+          ))}
+        </div>
+      )}
+
+      {marks.length > 0 && (
+        <div className="marks">
+          {marks.map(({ book: b, nodeId }) => (
+            <button key={`${b.id}-${nodeId}`} className="mark-card" onClick={() => p.onOpenAt(b, nodeId)}>
+              <MiniBoard sfen={toSfen(positionAt(b, nodeId).pos)} size={84} />
+              <span>{depthOf(b, nodeId)}手目</span>
+              <span>{b.name}</span>
+            </button>
           ))}
         </div>
       )}
