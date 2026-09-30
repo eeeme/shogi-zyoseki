@@ -330,3 +330,21 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 /* 次の手の行が縮められて下の線が欠けないように（中身の高さを固定し、ブロックはその分を確保） */
 .next-panel > * { flex: none; }
 .screen.fit .next-panel { height: 176px; min-height: 176px; max-height: 176px; padding-bottom: 40px; justify-content: flex-start; }
+
+/* 正解・不正解のエフェクト */
+.board-fb { position: relative; }
+.fb { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; z-index: 8; }
+.fb-mark { font-size: min(46vw, 210px); line-height: 1; font-weight: 700; animation: fb-pop .9s cubic-bezier(.2,1.4,.4,1) forwards; text-shadow: 0 0 24px currentColor; }
+.fb-ok .fb-mark { color: var(--accent); }
+.fb-ng .fb-mark { color: var(--bad); animation-name: fb-shake; }
+.fb-done .fb-mark { color: var(--good); font-size: min(30vw, 140px); animation-duration: 1.4s; }
+.fb-ring { position: absolute; width: 40%; aspect-ratio: 1; border-radius: 50%; border: 3px solid var(--accent); opacity: 0; animation: fb-ring .8s ease-out forwards; }
+.fb-ng .fb-ring { border-color: var(--bad); }
+.fb-done .fb-ring { border-color: var(--good); animation-duration: 1.2s; }
+.fb-spark { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); opacity: 0; transform: rotate(var(--a)) translateY(0); animation: fb-spark .8s ease-out forwards; }
+@keyframes fb-pop { 0% { transform: scale(.3); opacity: 0 } 25% { transform: scale(1.08); opacity: .95 } 60% { transform: scale(1); opacity: .9 } 100% { transform: scale(1.05); opacity: 0 } }
+@keyframes fb-shake { 0% { transform: scale(.6); opacity: 0 } 15% { transform: scale(1) translateX(0); opacity: .95 } 25% { transform: translateX(-14px) } 35% { transform: translateX(14px) } 45% { transform: translateX(-8px) } 55% { transform: translateX(0); opacity: .9 } 100% { opacity: 0 } }
+@keyframes fb-ring { 0% { transform: scale(.4); opacity: .9 } 100% { transform: scale(2.2); opacity: 0 } }
+@keyframes fb-spark { 0% { opacity: 1; transform: rotate(var(--a)) translateY(0) } 100% { opacity: 0; transform: rotate(var(--a)) translateY(-130px) } }
+.drill-status .msg { font-size: 18px; font-weight: 600; }
+.review-tag { font-style: normal; font-size: 11px; color: var(--bad); border: 1px solid rgba(208,103,95,.5); border-radius: 8px; padding: 1px 6px; margin-left: 8px; vertical-align: middle; font-weight: 400; }

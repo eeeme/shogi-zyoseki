@@ -22,6 +22,7 @@ export interface BookNode {
 export interface Folder {
   id: string
   name: string
+  review?: boolean // 今日の復習の対象にするフォルダ
   createdAt: number
 }
 

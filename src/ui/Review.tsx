@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { type Move, moveToUsi, usiToMove } from '../shogi/core'
 import { moveToJa } from '../shogi/notation'
-import { type Book, findChild, positionAt } from '../book/book'
-import { type DueItem, grade, turnAt } from '../book/srs'
+import { type Book, depthOf, findChild, positionAt } from '../book/book'
+import { type DueItem, grade, pickWeighted, turnAt, weights } from '../book/srs'
 import { Board } from './Board'
+import { Feedback, useFeedback } from './Feedback'
 
 interface Props {
   books: Book[]
@@ -18,66 +19,106 @@ const nextLabel = (due: number) => {
   return d <= 0 ? '10分後' : `${d}日後`
 }
 
-/** 復習日が来た局面だけを1問ずつ出す。間違えた局面はこの回の最後にもう一度出す */
+/**
+ * 復習：復習日が来た局面から始めて、その変化を最後まで通して指す。
+ * 相手の手は自動（要復習の多い変化を優先）、自分の手番はすべて出題。
+ */
 export function Review({ books, items, onChange, onBack }: Props) {
   const [queue, setQueue] = useState<DueItem[]>(items)
-  const [i, setI] = useState(0)
+  const [qi, setQi] = useState(0)
+  const [nodeId, setNodeId] = useState(items[0]?.nodeId ?? '')
   const [wrong, setWrong] = useState(false)
   const [hint, setHint] = useState<Move | null>(null)
-  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null)
-  const [tally, setTally] = useState({ ok: 0, ng: 0 })
+  const [msg, setMsg] = useState('')
+  const [lineDone, setLineDone] = useState(false)
+  const [tally, setTally] = useState({ ok: 0, ng: 0, lines: 0 })
+  const graded = useRef(new Set<string>()) // この回で採点済みの局面
+  const { fb, fire } = useFeedback()
 
-  const item = queue[i]
+  const item = queue[qi]
   const book = item ? books.find((b) => b.id === item.bookId) : undefined
-  const node = book && item ? book.nodes[item.nodeId] : undefined
+  const node = book?.nodes[nodeId]
+  const side = book && item ? turnAt(book, item.nodeId) : 0
   const st = useMemo(() => (book && node ? positionAt(book, node.id) : null), [book, node])
   const last = node?.move ? usiToMove(node.move) : null
+  const myTurn = book && node ? turnAt(book, node.id) === side : false
+  const w = useMemo(() => (book ? weights(book, side as 0 | 1) : new Map()), [book, side, qi])
 
-  const answer = (ok: boolean) => {
-    if (!book || !node) return
+  // 相手番は自動で指す／末端に来たら完走
+  useEffect(() => {
+    if (!book || !node || lineDone) return
+    if (node.children.length === 0) {
+      setLineDone(true)
+      setTally((t) => ({ ...t, lines: t.lines + 1 }))
+      fire('done')
+      return
+    }
+    if (!myTurn) {
+      const t = window.setTimeout(() => {
+        setMsg('')
+        setNodeId(pickWeighted(node.children, w))
+      }, 650)
+      return () => window.clearTimeout(t)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book, node, myTurn, lineDone])
+
+  const record = (ok: boolean) => {
+    if (!book || !node || graded.current.has(`${book.id}:${node.id}`)) return null
+    graded.current.add(`${book.id}:${node.id}`)
     book.srs[node.id] = grade(book.srs[node.id], ok)
     onChange(book)
     return book.srs[node.id].due
   }
 
-  const next = () => {
-    setWrong(false)
-    setHint(null)
-    setResult(null)
-    setI((n) => n + 1)
-  }
-
   const onMove = (m: Move) => {
-    if (!book || !node || !st || result) return
+    if (!book || !node || !st || !myTurn || lineDone) return
     const hit = findChild(book, node.id, moveToUsi(m))
     if (hit) {
-      const first = !wrong && !hint
-      if (first) {
-        const due = answer(true)!
+      if (!wrong && !hint) {
+        const due = record(true)
         setTally((t) => ({ ...t, ok: t.ok + 1 }))
-        setResult({ ok: true, text: `正解　次は${nextLabel(due)}` })
+        setMsg(due ? `正解　次は${nextLabel(due)}` : '正解')
+        fire('ok')
       } else {
-        setResult({ ok: true, text: 'もう一度出ます' })
+        setMsg('正解')
       }
-      window.setTimeout(next, 900)
+      setWrong(false)
+      setHint(null)
+      setNodeId(hit)
       return
     }
     if (!wrong && !hint) {
-      answer(false)
+      record(false)
       setTally((t) => ({ ...t, ng: t.ng + 1 }))
-      setQueue((q) => [...q, item])
+      setQueue((q) => [...q, { bookId: book.id, nodeId: node.id, due: 0 }]) // この回の最後にもう一度
     }
     setWrong(true)
+    setMsg(`${moveToJa(st.pos, m, st.prevTo)} ではありません`)
+    fire('ng')
   }
 
   const showAnswer = () => {
     if (!book || !node || !st) return
     if (!wrong && !hint) {
-      answer(false)
+      record(false)
       setTally((t) => ({ ...t, ng: t.ng + 1 }))
-      setQueue((q) => [...q, item])
+      setQueue((q) => [...q, { bookId: book.id, nodeId: node.id, due: 0 }])
     }
     setHint(usiToMove(book.nodes[node.children[0]].move!))
+    setMsg(`正解は ${node.children.map((c) => moveToJa(st.pos, usiToMove(book.nodes[c].move!), st.prevTo)).join(' / ')}`)
+  }
+
+  const nextLine = () => {
+    // この回で既に通った局面から始まる問題は飛ばす（間違えて戻した分は出す）
+    let i = qi + 1
+    while (i < queue.length && queue[i].due !== 0 && graded.current.has(`${queue[i].bookId}:${queue[i].nodeId}`)) i++
+    setQi(i)
+    setNodeId(queue[i]?.nodeId ?? '')
+    setWrong(false)
+    setHint(null)
+    setMsg('')
+    setLineDone(false)
   }
 
   if (!item || !book || !node || !st) {
@@ -90,41 +131,45 @@ export function Review({ books, items, onChange, onBack }: Props) {
         </header>
         <section className="panel review-done">
           <p className="big">完了</p>
-          <p className="tally">○{tally.ok}　×{tally.ng}</p>
+          <p className="tally">◯{tally.ok}　✕{tally.ng}　{tally.lines}変化</p>
           <button className="btn primary wide" onClick={onBack}>一覧へ</button>
         </section>
       </div>
     )
   }
 
-  const side = turnAt(book, node.id)
-  const answers = node.children.map((c) => moveToJa(st.pos, usiToMove(book.nodes[c].move!), st.prevTo))
+  const remaining = queue.length - qi
 
   return (
-    <div className="screen">
+    <div className="screen fit">
       <header className="bar">
         <button className="btn ghost" onClick={onBack}>‹ 終了</button>
-        <h1 className="bar-title">復習 <small>{i + 1} / {queue.length}</small></h1>
-        <span className="tally">○{tally.ok} ×{tally.ng}</span>
+        <h1 className="bar-title">復習 <small>残り{remaining}</small></h1>
+        <span className="tally">◯{tally.ok} ✕{tally.ng}</span>
       </header>
-      <p className="review-book muted">{book.name}</p>
-      <Board
-        key={`${item.bookId}-${item.nodeId}-${i}`}
-        pos={st.pos}
-        flipped={side === 1}
-        lastTo={last?.to ?? null}
-        lastFrom={last?.from ?? null}
-        hint={hint}
-        interactive={!result}
-        onMove={onMove}
-      />
+      <p className="review-book muted">{book.name}　{depthOf(book, node.id)}手目</p>
+      <div className="stage">
+        <div className="board-fb">
+          <Board
+            key={`${item.bookId}-${qi}`}
+            pos={st.pos}
+            flipped={side === 1}
+            lastTo={last?.to ?? null}
+            lastFrom={last?.from ?? null}
+            hint={hint}
+            interactive={myTurn && !lineDone}
+            onMove={onMove}
+          />
+          <Feedback kind={fb.kind} seq={fb.seq} />
+        </div>
+      </div>
       <section className="panel drill-status">
-        <p className={`msg ${result?.ok ? 'good' : wrong ? 'bad' : ''}`}>
-          {result ? result.text : hint ? answers.join(' / ') : wrong ? '違います' : `${side === 0 ? '☗' : '☖'}の番`}
+        <p className={`msg ${wrong ? 'bad' : msg.startsWith('正解') ? 'good' : ''}`}>
+          {lineDone ? 'この変化を最後まで指しました' : msg || (myTurn ? `${side === 0 ? '☗' : '☖'}の番です` : '相手が指します…')}
         </p>
-        {!result && (hint
-          ? <button className="btn primary" onClick={next}>次へ</button>
-          : <button className="btn" onClick={showAnswer}>答え</button>)}
+        {lineDone
+          ? <button className="btn primary wide" onClick={nextLine}>{remaining > 1 ? '次の変化へ' : '終わる'}</button>
+          : myTurn && <button className="btn" onClick={showAnswer}>答え</button>}
       </section>
     </div>
   )

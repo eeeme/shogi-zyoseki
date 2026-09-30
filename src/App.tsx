@@ -226,6 +226,12 @@ export default function App() {
           await saveFolder(f)
           setFolders((fs) => [...fs, f].sort((a, b) => a.name.localeCompare(b.name, 'ja')))
         }}
+        onToggleReview={async (f) => {
+          const n = { ...f, review: !f.review || undefined }
+          await saveFolder(n)
+          setFolders((fs) => fs.map((x) => (x.id === f.id ? n : x)))
+          toast(n.review ? '今日の復習に使います' : '今日の復習から外しました')
+        }}
         onRenameFolder={async (f) => {
           const name = prompt('フォルダ名', f.name)
           if (!name?.trim()) return
@@ -272,6 +278,7 @@ interface HomeProps {
   onDeleteBook: (b: Book) => void
   onNewFolder: () => void
   onRenameFolder: (f: Folder) => void
+  onToggleReview: (f: Folder) => void
   onDeleteFolder: (f: Folder) => void
 }
 
@@ -291,8 +298,9 @@ function Home(p: HomeProps) {
   const shown = activeTag
     ? inView.filter((b) => b.tags?.includes(activeTag))
     : books.filter((b) => (folder ? b.folderId === folder.id : !b.folderId || !folders.some((f) => f.id === b.folderId)))
-  // 一覧の直下では全部の本、フォルダ内ではそのフォルダの本が復習の対象
-  const due = dueItems(folder ? shown : books)
+  // 復習の対象は「復習に使う」フォルダの本だけ（フォルダ内ではそのフォルダ分）
+  const reviewFolders = new Set(folders.filter((f) => f.review).map((f) => f.id))
+  const due = dueItems((folder ? inView : books).filter((b) => b.folderId && reviewFolders.has(b.folderId)))
 
   const bookMenu = (b: Book) => setSheet({
     title: b.name,
@@ -326,12 +334,13 @@ function Home(p: HomeProps) {
       {folder ? (
         <header className="bar">
           <button className="btn ghost" onClick={() => p.setFolderId(null)}>‹ 一覧</button>
-          <h1 className="bar-title">📁 {folder.name}</h1>
+          <h1 className="bar-title">📁 {folder.name}{folder.review && <em className="review-tag">復習</em>}</h1>
           <button
             className="btn ghost"
             onClick={() => setSheet({
               title: folder.name,
               items: [
+                { label: folder.review ? '今日の復習から外す' : '今日の復習に使う', onClick: () => p.onToggleReview(folder) },
                 { label: 'フォルダ名を変更', onClick: () => p.onRenameFolder(folder) },
                 { label: 'フォルダを削除', danger: true, onClick: () => p.onDeleteFolder(folder) },
               ],
@@ -393,7 +402,7 @@ function Home(p: HomeProps) {
             return (
               <li key={f.id} className="book folder">
                 <button className="book-main" onClick={() => p.setFolderId(f.id)}>
-                  <span className="book-name">📁 {f.name}</span>
+                  <span className="book-name">📁 {f.name}{f.review && <em className="review-tag">復習</em>}</span>
                   <span className="book-meta">{n}冊</span>
                 </button>
                 <span className="chev">›</span>

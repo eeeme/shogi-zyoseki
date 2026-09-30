@@ -5,6 +5,7 @@ import { type Book, findChild, positionAt } from '../book/book'
 import { grade, pickWeighted, quizNodes, turnAt, weights } from '../book/srs'
 import { Board } from './Board'
 import { speak } from './speech'
+import { Feedback, useFeedback } from './Feedback'
 
 interface Props {
   book: Book
@@ -41,6 +42,7 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
   }, [book, node])
   const myTurn = turnAt(book, nodeId) === side
   const timer = useRef<number | undefined>(undefined)
+  const { fb, fire } = useFeedback()
 
   const quizCount = useMemo(() => quizNodes(book, side, origin).length, [book, side, origin])
 
@@ -50,6 +52,7 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
     if (node.children.length === 0) {
       setPhase('done')
       setTally((t) => ({ ...t, lines: t.lines + 1 }))
+      fire('done')
       return
     }
     if (!myTurn) {
@@ -84,6 +87,7 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
       if (wrong === 0 && !hint) {
         record(true)
         setTally((t) => ({ ...t, ok: t.ok + 1 }))
+        fire('ok')
       }
       const others = node.children.length - 1
       setMsg(others > 0 ? `正解（他に${others}通りの定跡手あり）` : '正解')
@@ -97,6 +101,7 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
       setTally((t) => ({ ...t, ng: t.ng + 1 }))
     }
     setWrong((n) => n + 1)
+    fire('ng')
     setMsg(`違います：${moveToJa(pos, m, prevTo)}。もう一度`)
   }
 
@@ -153,6 +158,7 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
         <h1 className="bar-title">練習 <small>{side === 0 ? '☗先手' : '☖後手'}</small></h1>
         <span className="tally">○{tally.ok} ×{tally.ng}</span>
       </header>
+      <div className="board-fb">
       <Board
         pos={pos}
         flipped={side === 1}
@@ -163,6 +169,8 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
         interactive={phase === 'run' && myTurn}
         onMove={onMove}
       />
+        <Feedback kind={fb.kind} seq={fb.seq} />
+      </div>
       <section className="panel drill-status">
         <p className="last-move">直前：{lastLabel}</p>
         {phase === 'run' ? (
