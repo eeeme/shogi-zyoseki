@@ -12,10 +12,6 @@ export function Feedback({ kind, seq }: { kind: FeedbackKind | null; seq: number
   }
   useEffect(() => {
     if (!shown) return
-    try {
-      if (shown.kind === 'ng') navigator.vibrate?.([40, 60, 40])
-      else navigator.vibrate?.(20)
-    } catch { /* 非対応端末 */ }
     const t = window.setTimeout(() => setShown(null), shown.kind === 'done' ? 1400 : 900)
     return () => window.clearTimeout(t)
   }, [shown])
