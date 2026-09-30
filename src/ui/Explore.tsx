@@ -165,7 +165,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
                   {c.label}
                   {i === 0 && children.length > 1 && <small>本線</small>}
                 </span>
-                {statText(c.usi) && <span className="choice-stat">{statText(c.usi)}</span>}
+                <span className="choice-stat">{statText(c.usi) || '\u00a0'}</span>
               </button>
             ))}
             {others.map((s) => (

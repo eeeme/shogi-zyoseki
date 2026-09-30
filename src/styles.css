@@ -311,3 +311,11 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .screen.fit .panel.editor { margin-bottom: 4px; }
 .sel-row { align-items: center; } .sel-row .sel-label { flex: none; white-space: nowrap; }
 .panel-label { margin: 0 0 -2px; font-size: 12px; color: var(--muted); letter-spacing: .1em; }
+
+/* 盤が上下に動かないよう、盤の下と持駒欄の高さを固定する */
+.screen.fit .next-panel { height: 128px; min-height: 128px; max-height: 128px; overflow-y: auto; }
+.choice { height: 56px; }
+.hand { flex-wrap: nowrap; height: 40px; min-height: 40px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.hand::-webkit-scrollbar { display: none; }
+.hand-piece { flex: none; }
+.nav-now { height: 44px; justify-content: center; white-space: nowrap; }
