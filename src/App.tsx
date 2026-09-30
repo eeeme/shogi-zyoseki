@@ -1,3 +1,4 @@
+import { SwipeBack } from './ui/SwipeBack'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Tour, resetTours } from './ui/Tour'
 import { type Book, type Folder, cloneBook, extractSubtree, mergeImport, newBook, uid } from './book/book'
@@ -256,6 +257,7 @@ export default function App() {
   return (
     <>
       {body}
+      <SwipeBack />
       {toastMsg && <div className="toast">{toastMsg}</div>}
       {appSheet && <ActionSheet title={appSheet.title} items={appSheet.items} onClose={() => setAppSheet(null)} />}
     </>

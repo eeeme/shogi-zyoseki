@@ -17,6 +17,7 @@ type Mode = 'none' | 'tree' | 'memo' | 'ignore'
  * 画面に重なる2枚のパネル。
  *  - ツリー：左へスワイプで右から出る／右へスワイプで閉じる
  *  - メモ：上へスワイプで下から出る／下へスワイプで閉じる
+ *  - 何も開いていないときの右スワイプは「戻る」（SwipeBack）
  * どちらかが開いている間は、もう片方は開かない。後ろの画面は動かない。
  */
 export function Sheets({ open, onOpenChange, area, tree, memo, memoFilled }: Props) {
@@ -46,9 +47,12 @@ export function Sheets({ open, onOpenChange, area, tree, memo, memoFilled }: Pro
       let m: Mode = 'ignore'
       // 横スクロールする行（次の手など）の上での横の動きは、その行のスクロールに任せる
       if (horiz && (e.target as HTMLElement).closest('.hscroll')) { s.mode = 'ignore'; return }
-      if (open === 'none') m = horiz && dx < 0 ? 'tree' : vert && dy < 0 ? 'memo' : 'ignore'
+      if (open === 'none') {
+        // 右へのスワイプは「戻る」（SwipeBack が処理）
+        m = horiz && dx < 0 ? 'tree' : vert && dy < 0 ? 'memo' : 'ignore'
+      }
       else if (open === 'tree') m = horiz && dx > 0 ? 'tree' : 'ignore'
-      else if (open === 'memo') m = vert && dy > 0 && !(e.target as HTMLElement).closest('textarea') ? 'memo' : 'ignore'
+      else if (open === 'memo') m = vert && dy > 0 && !(e.target as HTMLElement).closest('textarea:focus') ? 'memo' : 'ignore'
       s.mode = m
       if (m === 'ignore') return
       s.size = (m === 'tree' ? treeRef.current?.getBoundingClientRect().width : memoRef.current?.getBoundingClientRect().height) ?? 320
@@ -115,7 +119,7 @@ export function Sheets({ open, onOpenChange, area, tree, memo, memoFilled }: Pro
   })()
 
   return (
-    <div className="sheets-area" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onClickCapture={onClickCapture}>
+    <div className="sheets-area" data-open={open} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp} onClickCapture={onClickCapture}>
       {area}
       <div className="drawer-backdrop" style={{ opacity: progress * 0.45, pointerEvents: open !== 'none' ? 'auto' : 'none' }} onClick={() => onOpenChange('none')} />
       {open === 'none' && !off && (

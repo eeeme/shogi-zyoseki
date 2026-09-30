@@ -16,7 +16,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text); }
+html, body { margin: 0; background: var(--bg); color: var(--text); overscroll-behavior: none; }
 body {
   font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
   -webkit-tap-highlight-color: transparent;
@@ -172,7 +172,9 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 /* 閲覧画面は1画面に収まるので、指の動きはすべてアプリ側で扱う（メモ本文だけは縦スクロール可） */
 .sheets-area { position: relative; }
 .sheets-area, .sheets-area * { touch-action: none; }
-.sheets-area .memo-text { touch-action: pan-y; }
+/* 入力中だけメモ内をスクロール。入力していないときはメモの上で下へスワイプして閉じられる */
+.sheets-area .memo-text { touch-action: none; overscroll-behavior: contain; }
+.sheets-area .memo-text:focus { touch-action: pan-y; }
 .drawer-backdrop { position: fixed; inset: 0; background: #000; z-index: 30; transition: opacity .26s; }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(80vw, 400px); background: var(--surface); border-left: 1px solid var(--line-strong); z-index: 31; box-shadow: -12px 0 32px rgba(0,0,0,.45); will-change: transform; touch-action: pan-y; }
 .drawer-body { height: 100%; display: flex; flex-direction: column; gap: 10px; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); }
@@ -362,3 +364,7 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .tour-skip { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: 4px; font-size: 12px; }
 .tour-next { margin-left: auto; color: var(--text); }
 @keyframes tour-in { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+
+/* 右へスワイプで戻る：左端に出る矢印 */
+.swipe-back { position: fixed; left: 0; top: 50%; width: 44px; height: 44px; margin-top: -22px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); display: grid; place-items: center; font-size: 22px; z-index: 60; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+.swipe-back.ready { background: var(--accent); color: var(--bg); border-color: var(--accent); }
