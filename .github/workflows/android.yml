@@ -1,0 +1,52 @@
+name: Android (AAB)
+# 「Actions → Android (AAB) → Run workflow」で手動実行。
+# 署名済みの .aab が Artifacts に出るので、それを Play Console にアップロードする。
+# android/ などを変えて push したときも、ビルドが通るかだけ確かめる（鍵が無ければ未署名）。
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['android/**', 'capacitor.config.ts', 'package.json', '.github/workflows/android.yml', 'src/native.ts']
+permissions:
+  contents: read
+jobs:
+  aab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:app
+      - run: npx cap sync android
+      - name: 署名鍵を復元
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::Secrets に ANDROID_KEYSTORE_BASE64 が無いので未署名でビルドします（Play にはアップロードできません）"
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+      - name: AAB をビルド
+        working-directory: android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: upload
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          export VERSION_NAME=$(node -p "require('../package.json').version")
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jousekichou-${{ github.run_number }}
+          path: android/app/build/outputs/bundle/release/app-release.aab

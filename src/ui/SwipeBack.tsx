@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 const TRIGGER = 72
 
 /** 押せる「‹」ボタン（画面左上の戻る）を探す */
-function backButton(): HTMLButtonElement | null {
+export function backButton(): HTMLButtonElement | null {
   const btns = document.querySelectorAll<HTMLButtonElement>('header.bar > .btn.ghost')
   for (const b of btns) if (b.textContent?.trim().startsWith('‹') && b.offsetParent) return b
   return null

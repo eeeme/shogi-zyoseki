@@ -1,5 +1,8 @@
-// Web Speech API での読み上げ（読みはカタカナで渡す）
+import { isNative, nativeSpeak } from '../native'
+
+// 読み上げ（読みはカタカナで渡す）。ブラウザは Web Speech API、アプリは端末の読み上げ
 export function speak(text: string) {
+  if (isNative) return nativeSpeak(text)
   try {
     const s = window.speechSynthesis
     if (!s) return

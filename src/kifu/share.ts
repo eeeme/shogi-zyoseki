@@ -1,3 +1,4 @@
+import { isNative, nativeCopy } from '../native'
 // AIなどに渡すための局面テキスト（局面図＋SFEN＋ここまでの手順＋メモ）
 import { applyMove, parseSfen, usiToMove } from '../shogi/core'
 import { moveToJa } from '../shogi/notation'
@@ -35,6 +36,10 @@ export function positionText(book: Book, nodeId: string): string {
 
 export async function copyText(text: string): Promise<boolean> {
   try {
+    if (isNative) {
+      await nativeCopy(text)
+      return true
+    }
     await navigator.clipboard.writeText(text)
     return true
   } catch {

@@ -41,6 +41,17 @@ npm run build   # dist/ に出力
 
 main への push で GitHub Actions がテスト→ビルド→GitHub Pages へデプロイします（リポジトリ設定 Pages の Source を「GitHub Actions」にしておく）。
 
+## Android アプリ（Google Play）
+
+Capacitor で包んでいます（パッケージ名 `com.meisme.jousekichou`）。
+
+- `npm run android` … アプリ用にビルドして `android/` へ反映（Android Studio で開ける）
+- GitHub の Actions →「Android (AAB)」→ Run workflow … 署名済み `.aab` を作って Artifacts に置く
+  - 必要な Secrets：`ANDROID_KEYSTORE_BASE64`（アップロード鍵を base64 にしたもの）、`ANDROID_KEYSTORE_PASSWORD`
+  - versionCode は実行番号、versionName は package.json の version
+- アイコンの元画像は `assets/`（`npx capacitor-assets generate --android` で再生成）
+- アプリ版だけの処理は `src/native.ts`（端末の戻るボタン、読み上げ、コピー）
+
 ## 構成
 
 ```
