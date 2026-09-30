@@ -326,3 +326,7 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .choices .choice { flex: none; white-space: nowrap; }
 .sheets-area .hscroll, .sheets-area .hscroll * { touch-action: pan-x; }
 .screen.fit .next-panel { overflow: hidden; }
+
+/* 次の手の行が縮められて下の線が欠けないように（中身の高さを固定し、ブロックはその分を確保） */
+.next-panel > * { flex: none; }
+.screen.fit .next-panel { height: 176px; min-height: 176px; max-height: 176px; padding-bottom: 40px; justify-content: flex-start; }
