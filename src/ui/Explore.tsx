@@ -158,7 +158,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
 
       <section className="panel next-panel">
           <p className="panel-label">次の手</p>
-          <div className="choices">
+          <div className="choices hscroll">
             {children.map((c, i) => (
               <button key={c.id} className={`choice ${i === 0 ? 'main' : ''}`} onClick={() => setNodeId(c.id)}>
                 <span className="choice-move">
@@ -188,7 +188,7 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
             <button className="chip" onClick={() => setNodeId(transposed[0])}>⇄ 合流 {transposed.length}</button>
           )}
           {edit && (
-            <div className="edit-actions">
+            <div className="edit-actions hscroll">
               <button className="chip" onClick={() => onEditPosition(toSfen(pos))}>この局面から新規作成</button>
               {node.move && book.nodes[node.parent!].children[0] !== node.id && (
                 <button className="chip" onClick={() => { promoteToMain(book, node.id); onChange() }}>本線にする</button>

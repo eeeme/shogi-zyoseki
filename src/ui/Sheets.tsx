@@ -44,6 +44,8 @@ export function Sheets({ open, onOpenChange, area, tree, memo, memoFilled }: Pro
       const horiz = Math.abs(dx) > Math.abs(dy) * 1.2
       const vert = Math.abs(dy) > Math.abs(dx) * 1.2
       let m: Mode = 'ignore'
+      // 横スクロールする行（次の手など）の上での横の動きは、その行のスクロールに任せる
+      if (horiz && (e.target as HTMLElement).closest('.hscroll')) { s.mode = 'ignore'; return }
       if (open === 'none') m = horiz && dx < 0 ? 'tree' : vert && dy < 0 ? 'memo' : 'ignore'
       else if (open === 'tree') m = horiz && dx > 0 ? 'tree' : 'ignore'
       else if (open === 'memo') m = vert && dy > 0 && !(e.target as HTMLElement).closest('textarea') ? 'memo' : 'ignore'

@@ -319,3 +319,10 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .hand::-webkit-scrollbar { display: none; }
 .hand-piece { flex: none; }
 .nav-now { height: 44px; justify-content: center; white-space: nowrap; }
+
+/* 次の手は1行で横スクロール（縦に伸ばさない） */
+.choices { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding-bottom: 2px; }
+.choices::-webkit-scrollbar { display: none; }
+.choices .choice { flex: none; white-space: nowrap; }
+.sheets-area .hscroll, .sheets-area .hscroll * { touch-action: pan-x; }
+.screen.fit .next-panel { overflow: hidden; }
