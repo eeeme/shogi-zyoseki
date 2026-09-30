@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Tour } from './Tour'
 import { type Book, followLine, mergeImport, newBook, positionAt } from '../book/book'
 import { mainLine, parseKifu, readKifuFile } from '../kifu/parse'
 import { usiToMove } from '../shogi/core'
@@ -123,6 +124,14 @@ export function Import({ books, initialTarget, onCreate, onChange, onOpen, onBac
           </div>
         )}
       </section>
+      <Tour
+        id="import"
+        steps={[
+          { sel: '.setup .seg', title: '取り込む・照合', text: '「取り込む」は棋譜を本にします。「照合」は自分の対局が何手目で定跡を外れたかを調べます。' },
+          { sel: '.kifu-input', title: '棋譜を貼り付け', text: 'KIF・KI2・CSA・USIの棋譜をそのまま貼り付けます。将棋ウォーズなどでコピーした棋譜が使えます。' },
+          { sel: '.btn.file', title: 'ファイルから', text: '.kif などの棋譜ファイルを選んで読み込むこともできます。' },
+        ]}
+      />
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Tour } from './Tour'
 import { type Move, moveToUsi, usiToMove } from '../shogi/core'
 import { moveToJa } from '../shogi/notation'
 import { type Book, depthOf, findChild, positionAt } from '../book/book'
@@ -163,6 +164,13 @@ export function Review({ books, items, onChange, onBack }: Props) {
           <Feedback kind={fb.kind} seq={fb.seq} />
         </div>
       </div>
+      <Tour
+        id="review"
+        steps={[
+          { title: '今日の復習', text: '忘れかけた局面から始めて、その変化を最後まで通して指します。相手の手は自動、あなたの番はすべて出題です。' },
+          { sel: '.board', title: '正解すると間隔が伸びる', text: '正解した局面は次の復習日が先に伸び、間違えた局面はこの回の最後にもう一度出ます。' },
+        ]}
+      />
       <section className="panel drill-status">
         <p className={`msg ${wrong ? 'bad' : msg.startsWith('正解') ? 'good' : ''}`}>
           {lineDone ? 'この変化を最後まで指しました' : msg || (myTurn ? `${side === 0 ? '☗' : '☖'}の番です` : '相手が指します…')}

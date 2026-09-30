@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Tour } from './Tour'
 import { type Move, moveToUsi, usiToMove } from '../shogi/core'
 import { moveToJa, moveToKana } from '../shogi/notation'
 import { type Book, findChild, positionAt } from '../book/book'
@@ -147,6 +148,14 @@ export function Drill({ book, startNode, onChange, onBack }: Props) {
             {quizCount === 0 ? '出題なし' : 'はじめる'}
           </button>
         </section>
+        <Tour
+          id="drill"
+          steps={[
+            { sel: '.setup .seg', title: '自分の手番', text: 'あなたが先手と後手のどちらを持つかを選びます。相手の手は自動で指されます。' },
+            { sel: '.setup .row.gap.wrap', title: 'オプション', text: '駒を隠して頭の中で盤を思い浮かべる練習や、相手の手の読み上げもできます。' },
+            { sel: '.setup .btn.primary.wide', title: 'はじめる', text: '自分の番で定跡の手を盤に指してください。分岐があればどれを指しても正解です。わからないときは「答えを見る」。' },
+          ]}
+        />
       </div>
     )
   }

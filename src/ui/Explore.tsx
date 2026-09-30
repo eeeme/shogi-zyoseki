@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Tour } from './Tour'
 import { type Move, applyMove, moveToUsi, toSfen, usiToMove } from '../shogi/core'
 import { moveToJa } from '../shogi/notation'
 import {
@@ -256,5 +257,39 @@ export function Explore({ book, rev, nodeId, setNodeId, onChange, onBack, onDril
     </div>
   )
 
-  return <Sheets open={sheet} onOpenChange={setSheet} area={screen} tree={panel} memo={memo} memoFilled={!!node.comment} />
+  return (
+    <>
+      <Sheets open={sheet} onOpenChange={setSheet} area={screen} tree={panel} memo={memo} memoFilled={!!node.comment} />
+      <Tour
+        id="explore"
+        when={sheet === 'none' && !fromSearch}
+        steps={[
+          { sel: '.board', title: '盤をタップして進む・戻る', text: '盤の右半分をタップすると1手進み、左半分をタップすると1手戻ります。' },
+          { sel: '.nav', title: '手順の移動', text: '最初へ・1手戻る・1手進む・最後へ。今の手と手数が真ん中に出ます。' },
+          { sel: '.next-panel', title: '次の手', text: '分岐があれば並びます。タップでその手に進みます。数字は、全部の本でその手が指された割合と局数です。' },
+          { sel: '[aria-label="編集"]', title: '編集', text: 'オンにすると、盤で駒を動かして手を追加できます。本線の入れ替えや削除もここから。' },
+          { sel: '[aria-label="盤反転"]', title: '盤反転', text: '後手側から見た向きに切り替えます。' },
+          { sel: '[aria-label="この局面を検索"]', title: 'この局面を検索', text: '同じ局面が他の本に出てくるかを探します。一致した本からは手順をマージできます。' },
+          { sel: '[aria-label="しおり"]', title: 'しおり', text: 'あとで見返したい局面に印を付けると、一覧の上に並びます。' },
+          { sel: '[aria-label="局面をテキストでコピー"]', title: '局面をコピー', text: '今の局面をテキストでコピーします。AIに貼り付けて分析してもらうときに使えます。' },
+          { sel: '.drawer-handle', title: 'ツリー', text: '画面を左へスワイプすると、右から定跡ツリーが出てきます。分岐の全体を見渡せます。' },
+          { sel: '.memo-handle', title: 'メモ', text: '画面を上へスワイプすると、下からこの局面のメモが出てきます。' },
+          { sel: '.bar .btn.primary', title: '練習', text: 'この本で練習を始めます。今の局面から始めることもできます。' },
+        ]}
+      />
+      <Tour
+        id="tree"
+        when={sheet === 'tree'}
+        steps={[
+          { sel: '.drawer .tree-box', title: '定跡ツリー', text: '下へ行くほど手が進み、右の列が変化です。指で上下左右に動かせます。手をタップするとその局面に移動します。' },
+          { sel: '.drawer .row', title: '棋譜の取り込み・コピー', text: 'この本に棋譜を足したり、本全体をKIFでコピーしたりできます。右へスワイプで閉じます。' },
+        ]}
+      />
+      <Tour
+        id="memo"
+        when={sheet === 'memo'}
+        steps={[{ sel: '.memo-text', title: 'メモ', text: 'この局面の狙いや注意点を書いておけます。閉じると自動で保存されます。下へスワイプで閉じます。' }]}
+      />
+    </>
+  )
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Tour } from './Tour'
 import {
   type BaseType, type Color, type HandType, type Pos, type PType,
   HAND_TYPES, PROMOTE, START_SFEN, UNPROMOTE, clonePos, deadEnd, fileOf, parseSfen, rankOf, toSfen,
@@ -240,6 +241,16 @@ export function BoardEditor({ initialSfen, onCreate, onBack, toast, forSearch }:
         </div>
       </section>
 
+      <Tour
+        id={forSearch ? 'search-editor' : 'editor'}
+        steps={[
+          { sel: '.palette', title: '駒箱', text: '置きたい駒をタップして選び、盤のマスをタップすると置けます。1回置くと選択は外れます。数字は残りの枚数です。' },
+          { sel: '.palette-head', title: '先手・後手と成駒', text: 'どちらの駒として置くか、成った駒として置くかを切り替えます。' },
+          { sel: '.board', title: '盤の駒を動かす', text: '盤の駒をタップすると選ばれ、別のマスをタップで移動。成・先後反転・駒箱へ戻す操作もできます。' },
+          { sel: '.hand-bottom', title: '持駒', text: '駒箱の駒を選んで持駒欄をタップすると、持駒に加わります。' },
+          { sel: '.bar .btn.primary', title: forSearch ? '検索' : '作成', text: forSearch ? '並べ終わったら押して、手番を選んで検索します。' : '並べ終わったら押して、手番と名前を決めて本を作ります。' },
+        ]}
+      />
       {confirming && (
         <div className="sheet-backdrop" onClick={() => setConfirming(false)}>
           <div className="sheet form" onClick={(e) => e.stopPropagation()}>

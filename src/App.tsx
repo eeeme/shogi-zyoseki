@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Tour, resetTours } from './ui/Tour'
 import { type Book, type Folder, cloneBook, extractSubtree, mergeImport, newBook, uid } from './book/book'
 import {
   deleteBook, deleteFolder, loadBooks, loadFolders, markSampleInstalled, sampleInstalled, saveBook, saveFolder,
@@ -351,9 +352,12 @@ function Home(p: HomeProps) {
       ) : (
         <header className="hero">
           <h1>定跡帳</h1>
+          <span className="hero-tools">
+          <button className="icon-btn search-btn" onClick={() => { resetTours(); location.reload() }} aria-label="使い方">?</button>
           <button className="icon-btn search-btn" onClick={p.onSearch} aria-label="局面検索">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M15 15l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
           </button>
+          </span>
         </header>
       )}
 
@@ -368,7 +372,7 @@ function Home(p: HomeProps) {
             ...(folder ? [] : [{ label: 'フォルダ', onClick: p.onNewFolder }]),
           ],
         })}
-      >＋ 新規作成</button>
+       data-tour="new">＋ 新規作成</button>
       {due.length > 0 && (
         <button className="btn review-btn wide" onClick={() => p.onReview(due)}>
           今日の復習<span className="count">{due.length}</span>
@@ -437,6 +441,20 @@ function Home(p: HomeProps) {
         })}
       </ul>
       <footer className="foot muted">ME IS ME</footer>
+      {!folder && (
+        <Tour
+          id="home"
+          steps={[
+            { title: '定跡帳へようこそ', text: '定跡を「本」として記録し、分岐をたどって覚えるアプリです。まずは使い方を少しだけ案内します。' },
+            { sel: '[data-tour="new"]', title: '本を作る', text: '初手から指して作る、盤面を並べて作る、棋譜を貼り付けて作る、フォルダを作る、がここにまとまっています。' },
+            { sel: '.books .book:not(.folder) .book-main', title: '本を開く', text: 'タップすると盤が開き、手順を進めたり戻したりして確認できます。サンプルの本を用意してあります。' },
+            { sel: '.books .book:not(.folder) .btn.primary', title: '練習', text: '相手の手は自動で指され、あなたの番で定跡の手を答えます。間違えた局面は後日また出題されます。' },
+            { sel: '.books .book:not(.folder) [aria-label="メニュー"]', title: '本のメニュー', text: '名前の変更、タグ、対局情報、フォルダへの移動、削除ができます。' },
+            { sel: '[aria-label="局面検索"]', title: '局面検索', text: '盤面を並べて、同じ局面や似た局面がどの本に出てくるかを探せます。' },
+            { sel: '[aria-label="使い方"]', title: '使い方をもう一度', text: 'この案内はいつでもここからもう一度見られます。' },
+          ]}
+        />
+      )}
       {sheet && <ActionSheet title={sheet.title} items={sheet.items} onClose={() => setSheet(null)} />}
       {form?.kind === 'tags' && (
         <TagSheet
