@@ -128,7 +128,7 @@ export async function openStorePage() {
 
 export async function shareApp(): Promise<'shared' | 'copied' | 'none'> {
   const text = '将棋の定跡を分岐のツリーで覚えるアプリ「定跡帳」'
-  const url = isNative ? PLAY_URL : WEB_URL
+  const url = PLAY_URL // ブラウザ版から紹介するときもストアへ案内する
   try {
     if (isNative) { await Share.share({ title: '定跡帳', text, url }); return 'shared' }
     if (navigator.share) { await navigator.share({ title: '定跡帳', text, url }); return 'shared' }
