@@ -65,7 +65,7 @@ export function Support({ onBack, toast }: Props) {
         <div className="support-free">
           {isNative && <button className="btn wide" onClick={openStorePage}>★ Google Play で評価する</button>}
           <button className="btn wide" onClick={share}>友だちに紹介する</button>
-          <button className="btn wide" onClick={() => postToX('定跡帳を使っています')}>X で感想を書く（#{HASHTAG}）</button>
+          <button className="btn wide" onClick={() => postToX()}>X で感想を書く（#{HASHTAG}）</button>
         </div>
       </section>
 
@@ -107,7 +107,7 @@ export function Support({ onBack, toast }: Props) {
           {thanks && (
             <div className={`thanks-card tier-${thanks.tip.id}`}>
               <p className="support-thanks">ありがとうございます！<br />大切に使わせていただきます。</p>
-              <button className="btn wide" onClick={() => postToX(`定跡帳を${thanks.label}しました！`)}>X でひとこと（#{HASHTAG}）</button>
+              <button className="btn wide" onClick={() => postToX()}>X でひとこと（#{HASHTAG}）</button>
             </div>
           )}
         </section>

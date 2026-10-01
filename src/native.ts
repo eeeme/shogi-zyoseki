@@ -142,10 +142,9 @@ export async function shareApp(): Promise<'shared' | 'copied' | 'none'> {
 export const HASHTAG = '定跡帳アプリ'
 
 /** X の投稿画面を開く（ハッシュタグ入り）。アプリが入っていれば X アプリで開く */
-export async function postToX(text: string) {
-  // X アプリは hashtags= を無視するので、本文の最後に直接入れる
-  const body = `${text}\n#${HASHTAG}\n${isNative ? PLAY_URL : WEB_URL}`
-  const url = `https://x.com/intent/post?text=${encodeURIComponent(body)}`
+export async function postToX() {
+  // 本文はハッシュタグだけ（X アプリは hashtags= を無視するので本文に入れる）
+  const url = `https://x.com/intent/post?text=${encodeURIComponent(`#${HASHTAG} `)}`
   if (isNative) { await AppLauncher.openUrl({ url }).catch(() => {}); return }
   window.open(url, '_blank', 'noopener')
 }
