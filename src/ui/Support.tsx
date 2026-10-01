@@ -61,12 +61,13 @@ export function Support({ onBack, toast }: Props) {
               {tips.map((t, i) => (
                 <button key={t.id} className="tip" disabled={busy} onClick={() => buy(t)}>
                   <span className="tip-label">{LABELS[i] ?? '応援'}</span>
-                  <span className="tip-price">{t.price}</span>
+                  <span className="tip-price">{t.price}{t.id === 'support_large' && <small>〜</small>}</span>
+                  {t.id === 'support_large' && <span className="tip-note">口数を選べます</span>}
                 </button>
               ))}
             </div>
           )}
-          <p className="muted small">1回きりのお支払いです。応援しても機能は変わりません。</p>
+          <p className="muted small">1回きりのお支払いです。「たくさん応援」は支払い画面で口数（×2、×3…）を選べます。応援しても機能は変わりません。</p>
           {thanks && <p className="support-thanks">ありがとうございます！<br />大切に使わせていただきます。</p>}
         </section>
       )}

@@ -379,6 +379,8 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 .tip:disabled { opacity: .5; }
 .tip-label { font-size: 12px; color: var(--muted); }
 .tip-price { font-size: 18px; color: var(--accent); font-weight: 700; }
+.tip-price small { font-size: 12px; margin-left: 1px; }
+.tip-note { font-size: 10px; color: var(--muted); }
 .muted.small { font-size: 12px; }
 .support-thanks { margin: 0; text-align: center; color: var(--accent); font-size: 18px; line-height: 1.8; animation: thanks-in .6s cubic-bezier(.2,1.4,.4,1); }
 @keyframes thanks-in { from { transform: scale(.6); opacity: 0 } to { transform: scale(1); opacity: 1 } }
