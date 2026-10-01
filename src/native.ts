@@ -143,7 +143,9 @@ export const HASHTAG = '定跡帳アプリ'
 
 /** X の投稿画面を開く（ハッシュタグ入り）。アプリが入っていれば X アプリで開く */
 export async function postToX(text: string) {
-  const url = `https://x.com/intent/post?text=${encodeURIComponent(text)}&hashtags=${encodeURIComponent(HASHTAG)}`
+  // X アプリは hashtags= を無視するので、本文の最後に直接入れる
+  const body = `${text}\n#${HASHTAG}\n${isNative ? PLAY_URL : WEB_URL}`
+  const url = `https://x.com/intent/post?text=${encodeURIComponent(body)}`
   if (isNative) { await AppLauncher.openUrl({ url }).catch(() => {}); return }
   window.open(url, '_blank', 'noopener')
 }
