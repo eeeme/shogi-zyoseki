@@ -52,7 +52,7 @@ Capacitor で包んでいます（パッケージ名 `com.meisme.jousekichou`）
   - versionCode は実行番号、versionName は package.json の version
 - アイコンの元画像は `assets/`（`npx capacitor-assets generate --android` で再生成）
 - アプリ版だけの処理は `src/native.ts`（端末の戻るボタン、読み上げ、コピー、応援の支払い）
-- 応援のアイテムは Play Console の「アプリ内アイテム」に `support_small` / `support_medium` / `support_large` で作る（消費型として扱う）。`support_large` は「複数購入」をオンにして、支払い画面で口数を選べるようにする
+- 応援のアイテムは Play Console の「アプリ内アイテム」に `support_small` / `support_medium` / `support_large` で作る（消費型として扱う）。応援後のひとことメッセージは `gas/Code.gs`（Google Apps Script）でスプレッドシートに記録しメールで通知。デプロイした URL を `src/native.ts` の `MESSAGE_ENDPOINT` に入れる。`support_large` は「複数購入」をオンにして、支払い画面で口数を選べるようにする
 
 ## 構成
 
