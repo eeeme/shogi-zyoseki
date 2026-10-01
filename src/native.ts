@@ -73,6 +73,50 @@ export async function buyTip(id: string): Promise<boolean> {
   }
 }
 
+/** 毎月の応援（定期購入）。Play Console の「定期購入」に同じ ID・基本プラン ID で作る */
+export const MONTHLY_ID = 'support_monthly'
+export const MONTHLY_PLAN = 'monthly'
+
+export interface Monthly { price: string; offerToken?: string }
+
+export async function loadMonthly(): Promise<Monthly | null> {
+  if (!isNative) return null
+  try {
+    const { products } = await NativePurchases.getProducts({ productIdentifiers: [MONTHLY_ID], productType: PURCHASE_TYPE.SUBS })
+    const p = products.find((x) => x.identifier === MONTHLY_PLAN) ?? products[0]
+    return p ? { price: p.priceString, offerToken: p.offerToken } : null
+  } catch {
+    return null
+  }
+}
+
+/** いま毎月の応援をしてくれているか */
+export async function monthlyActive(): Promise<boolean> {
+  if (!isNative) return false
+  try {
+    const { purchases } = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS })
+    return purchases.some((t) => t.productIdentifier === MONTHLY_ID && (t.purchaseState === undefined || t.purchaseState === '1'))
+  } catch {
+    return false
+  }
+}
+
+export async function buyMonthly(m: Monthly): Promise<boolean> {
+  try {
+    await NativePurchases.purchaseProduct({ productIdentifier: MONTHLY_ID, planIdentifier: MONTHLY_PLAN, offerToken: m.offerToken, productType: PURCHASE_TYPE.SUBS })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Google Play の定期購入の管理画面（解約もここ） */
+export async function manageMonthly() {
+  await NativePurchases.manageSubscriptions().catch(() =>
+    AppLauncher.openUrl({ url: `https://play.google.com/store/account/subscriptions?sku=${MONTHLY_ID}&package=${APP_ID}` }).catch(() => {}),
+  )
+}
+
 export async function openStorePage() {
   if (isNative) {
     try { await AppLauncher.openUrl({ url: `market://details?id=${APP_ID}` }); return } catch { /* Play が無い端末 */ }

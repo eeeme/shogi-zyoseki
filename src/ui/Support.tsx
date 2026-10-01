@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { HASHTAG, type Tip, buyTip, isNative, loadTips, openStorePage, postToX, shareApp } from '../native'
+import { HASHTAG, type Monthly, type Tip, buyMonthly, buyTip, isNative, loadMonthly, loadTips, manageMonthly, monthlyActive, openStorePage, postToX, shareApp } from '../native'
 
 const LABELS = ['ちょっと応援', '応援', 'たくさん応援']
 const VERSION = import.meta.env.VITE_APP_VERSION ?? ''
@@ -15,9 +15,26 @@ export function Support({ onBack, toast }: Props) {
   const [busy, setBusy] = useState(false)
   const [thanks, setThanks] = useState<{ tip: Tip; label: string } | null>(null)
 
+  const [monthly, setMonthly] = useState<Monthly | null>(null)
+  const [subscribed, setSubscribed] = useState(false)
+
   useEffect(() => {
-    if (isNative) loadTips().then(setTips)
+    if (!isNative) return
+    loadTips().then(setTips)
+    loadMonthly().then(setMonthly)
+    monthlyActive().then(setSubscribed)
   }, [])
+
+  const subscribe = async () => {
+    if (!monthly || busy) return
+    setBusy(true)
+    const ok = await buyMonthly(monthly)
+    setBusy(false)
+    if (ok) {
+      setSubscribed(true)
+      setThanks({ tip: { id: 'support_monthly', price: monthly.price, amount: 0 }, label: '毎月応援' })
+    }
+  }
 
   const buy = async (t: Tip) => {
     if (busy) return
@@ -56,7 +73,7 @@ export function Support({ onBack, toast }: Props) {
         <section className="panel support">
           <p className="support-head">開発を応援する</p>
           {tips === null && <p className="muted">読み込み中…</p>}
-          {tips && tips.length === 0 && <p className="muted">いまは利用できません</p>}
+          {tips && tips.length === 0 && !monthly && <p className="muted">いまは利用できません</p>}
           {tips && tips.length > 0 && (
             <div className="tips">
               {tips.map((t, i) => (
@@ -68,7 +85,25 @@ export function Support({ onBack, toast }: Props) {
               ))}
             </div>
           )}
-          <p className="muted small">1回きりのお支払いです。「たくさん応援」は支払い画面で口数（×2、×3…）を選べます。応援しても機能は変わりません。</p>
+          {monthly && (
+            <div className="monthly">
+              {subscribed ? (
+                <>
+                  <p className="monthly-on">毎月応援してくれています。ありがとうございます！</p>
+                  <button className="btn small" onClick={manageMonthly}>Google Play で確認・解約</button>
+                </>
+              ) : (
+                <>
+                  <button className="tip monthly-btn" disabled={busy} onClick={subscribe}>
+                    <span className="tip-label">毎月応援</span>
+                    <span className="tip-price">{monthly.price}<small> / 月</small></span>
+                  </button>
+                  <p className="muted small">毎月自動で更新されます。いつでも Google Play の「定期購入」から解約でき、解約しても機能は変わりません。</p>
+                </>
+              )}
+            </div>
+          )}
+          <p className="muted small">上の3つは1回きりのお支払いです。「たくさん応援」は支払い画面で口数（×2、×3…）を選べます。応援しても機能は変わりません。</p>
           {thanks && (
             <div className={`thanks-card tier-${thanks.tip.id}`}>
               <p className="support-thanks">ありがとうございます！<br />大切に使わせていただきます。</p>
