@@ -1,4 +1,5 @@
 import { SwipeBack } from './ui/SwipeBack'
+import { Support } from './ui/Support'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Tour, resetTours } from './ui/Tour'
 import { type Book, type Folder, cloneBook, extractSubtree, mergeImport, newBook, uid } from './book/book'
@@ -33,6 +34,7 @@ type Screen =
   | { kind: 'editor'; sfen?: string; back: Screen; forSearch?: boolean }
   | { kind: 'search'; sfen: string; back: Screen; origin?: Origin }
   | { kind: 'review'; items: DueItem[] }
+  | { kind: 'support' }
 
 export default function App() {
   const [books, setBooks] = useState<Book[] | null>(null)
@@ -165,6 +167,8 @@ export default function App() {
         onBack={() => setScreen(screen.back)}
       />
     )
+  } else if (screen.kind === 'support') {
+    body = <Support onBack={() => setScreen({ kind: 'home' })} toast={toast} />
   } else if (screen.kind === 'review') {
     body = <Review books={books} items={screen.items} onChange={touch} onBack={() => setScreen({ kind: 'home' })} />
   } else if (screen.kind === 'search') {
@@ -215,6 +219,7 @@ export default function App() {
         onSearch={() => setScreen({ kind: 'editor', back: { kind: 'home' }, forSearch: true })}
         onReview={(items) => setScreen({ kind: 'review', items })}
         onImport={() => setScreen({ kind: 'import', back: { kind: 'home' } })}
+        onSupport={() => setScreen({ kind: 'support' })}
         onChangeBook={touch}
         onDeleteBook={async (b) => {
           if (!confirm(`「${b.name}」を削除しますか？（元に戻せません）`)) return
@@ -283,6 +288,7 @@ interface HomeProps {
   onRenameFolder: (f: Folder) => void
   onToggleReview: (f: Folder) => void
   onDeleteFolder: (f: Folder) => void
+  onSupport: () => void
 }
 
 function Home(p: HomeProps) {
@@ -355,6 +361,9 @@ function Home(p: HomeProps) {
         <header className="hero">
           <h1>定跡帳</h1>
           <span className="hero-tools">
+          <button className="icon-btn search-btn" onClick={p.onSupport} aria-label="応援する">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+          </button>
           <button className="icon-btn search-btn" onClick={() => { resetTours(); location.reload() }} aria-label="使い方">?</button>
           <button className="icon-btn search-btn" onClick={p.onSearch} aria-label="局面検索">
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" /><path d="M15 15l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>

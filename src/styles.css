@@ -368,3 +368,18 @@ select, input:not([type=file]), .kifu-input { width: 100%; min-height: 44px; bac
 /* 右へスワイプで戻る：左端に出る矢印 */
 .swipe-back { position: fixed; left: 0; top: 50%; width: 44px; height: 44px; margin-top: -22px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); display: grid; place-items: center; font-size: 22px; z-index: 60; pointer-events: none; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
 .swipe-back.ready { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+/* 応援 */
+.support { display: flex; flex-direction: column; gap: 12px; }
+.support-lead { margin: 0; line-height: 1.9; font-size: 15px; }
+.support-free { display: flex; flex-direction: column; gap: 8px; }
+.support-head { margin: 0; font-size: 13px; color: var(--muted); letter-spacing: .1em; }
+.tips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tip { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 4px; border-radius: 12px; border: 1px solid var(--accent); background: var(--accent-soft); color: var(--text); }
+.tip:disabled { opacity: .5; }
+.tip-label { font-size: 12px; color: var(--muted); }
+.tip-price { font-size: 18px; color: var(--accent); font-weight: 700; }
+.muted.small { font-size: 12px; }
+.support-thanks { margin: 0; text-align: center; color: var(--accent); font-size: 18px; line-height: 1.8; animation: thanks-in .6s cubic-bezier(.2,1.4,.4,1); }
+@keyframes thanks-in { from { transform: scale(.6); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+.credit { text-align: center; letter-spacing: .2em; margin-top: 8px; }
