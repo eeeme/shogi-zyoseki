@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MESSAGE_ENDPOINT, type Tip, buyTip, isNative, loadTips, openStorePage, sendSupportMessage, shareApp } from '../native'
+import { HASHTAG, type Tip, buyTip, isNative, loadTips, openStorePage, postToX, shareApp } from '../native'
 
 const LABELS = ['ちょっと応援', '応援', 'たくさん応援']
 const VERSION = import.meta.env.VITE_APP_VERSION ?? ''
@@ -14,9 +14,6 @@ export function Support({ onBack, toast }: Props) {
   const [tips, setTips] = useState<Tip[] | null>(isNative ? null : [])
   const [busy, setBusy] = useState(false)
   const [thanks, setThanks] = useState<{ tip: Tip; label: string } | null>(null)
-  const [name, setName] = useState('')
-  const [message, setMessage] = useState('')
-  const [sent, setSent] = useState<'no' | 'sending' | 'done'>('no')
 
   useEffect(() => {
     if (isNative) loadTips().then(setTips)
@@ -29,17 +26,7 @@ export function Support({ onBack, toast }: Props) {
     setBusy(false)
     if (ok) {
       setThanks({ tip: t, label: LABELS[tips?.indexOf(t) ?? 0] ?? '応援' })
-      setSent('no')
-      setMessage('')
     }
-  }
-
-  const send = async () => {
-    if (!thanks || !message.trim() || sent !== 'no') return
-    setSent('sending')
-    const ok = await sendSupportMessage({ tier: `${thanks.label}（${thanks.tip.price}〜）`, name: name.trim(), message: message.trim() })
-    if (ok) setSent('done')
-    else { setSent('no'); toast('送れませんでした。電波のよいところでもう一度') }
   }
 
   const share = async () => {
@@ -61,6 +48,7 @@ export function Support({ onBack, toast }: Props) {
         <div className="support-free">
           {isNative && <button className="btn wide" onClick={openStorePage}>★ Google Play で評価する</button>}
           <button className="btn wide" onClick={share}>友だちに紹介する</button>
+          <button className="btn wide" onClick={() => postToX('定跡帳を使っています')}>X で感想を書く（#{HASHTAG}）</button>
         </div>
       </section>
 
@@ -84,17 +72,7 @@ export function Support({ onBack, toast }: Props) {
           {thanks && (
             <div className={`thanks-card tier-${thanks.tip.id}`}>
               <p className="support-thanks">ありがとうございます！<br />大切に使わせていただきます。</p>
-              {MESSAGE_ENDPOINT && sent !== 'done' && (
-                <>
-                  <input className="thanks-name" placeholder="ニックネーム（任意）" maxLength={30} value={name} onChange={(e) => setName(e.target.value)} />
-                  <textarea className="thanks-msg" placeholder="ひとことメッセージ（任意）" maxLength={300} rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />
-                  <button className="btn primary wide" disabled={!message.trim() || sent === 'sending'} onClick={send}>
-                    {sent === 'sending' ? '送信中…' : '開発者に送る'}
-                  </button>
-                  <p className="muted small">メッセージは開発者だけが読みます。公開されません。</p>
-                </>
-              )}
-              {sent === 'done' && <p className="muted">メッセージを受け取りました。</p>}
+              <button className="btn wide" onClick={() => postToX(`定跡帳を${thanks.label}しました！`)}>X でひとこと（#{HASHTAG}）</button>
             </div>
           )}
         </section>

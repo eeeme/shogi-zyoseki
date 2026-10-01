@@ -1,5 +1,5 @@
 // Android アプリ（Capacitor）でだけ必要な処理。ブラウザ版では何もしない。
-import { Capacitor, CapacitorHttp } from '@capacitor/core'
+import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
 import { Clipboard } from '@capacitor/clipboard'
 import { TextToSpeech } from '@capacitor-community/text-to-speech'
@@ -95,24 +95,11 @@ export async function shareApp(): Promise<'shared' | 'copied' | 'none'> {
   return 'copied'
 }
 
-/**
- * 応援メッセージの送り先（Google Apps Script のウェブアプリ URL）。
- * スプレッドシートに1行追加し、メールで通知する（gas/Code.gs）。空なら送信欄を出さない。
- */
-export const MESSAGE_ENDPOINT = ''
+export const HASHTAG = '定跡帳アプリ'
 
-export async function sendSupportMessage(d: { tier: string; name: string; message: string }): Promise<boolean> {
-  if (!MESSAGE_ENDPOINT) return false
-  const body = JSON.stringify({ ...d, app: `定跡帳 ${import.meta.env.VITE_APP_VERSION ?? ''}` })
-  try {
-    if (isNative) {
-      const r = await CapacitorHttp.request({ url: MESSAGE_ENDPOINT, method: 'POST', headers: { 'Content-Type': 'text/plain' }, data: body })
-      return r.status >= 200 && r.status < 400
-    }
-    // ブラウザは応答を読めない送り方（CORS の都合）。届いたものとして扱う
-    await fetch(MESSAGE_ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body })
-    return true
-  } catch {
-    return false
-  }
+/** X の投稿画面を開く（ハッシュタグ入り）。アプリが入っていれば X アプリで開く */
+export async function postToX(text: string) {
+  const url = `https://x.com/intent/post?text=${encodeURIComponent(text)}&hashtags=${encodeURIComponent(HASHTAG)}`
+  if (isNative) { await AppLauncher.openUrl({ url }).catch(() => {}); return }
+  window.open(url, '_blank', 'noopener')
 }
