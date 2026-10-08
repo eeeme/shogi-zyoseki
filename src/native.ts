@@ -47,14 +47,36 @@ export const WEB_URL = 'https://eeeme.github.io/shogi-zyoseki/'
 /** Play Console の「アプリ内アイテム」に同じ ID で作る（小・中・大） */
 export const TIP_IDS = ['support_small', 'support_medium', 'support_large']
 
+/**
+ * 課金プラグインの呼び出しは必ず1本ずつ順番に流す。
+ * Android 版プラグインは呼び出しのたびに Google Play との接続を作り直し、その前に既存の接続を閉じる。
+ * 同時に呼ぶと後から来た呼び出しが先の接続を切ってしまい、先の取得が失敗する（定期購入が出たり出なかったりした原因）。
+ */
+let billingQueue: Promise<unknown> = Promise.resolve()
+function billing<T>(fn: () => Promise<T>): Promise<T> {
+  const run = billingQueue.then(fn, fn)
+  billingQueue = run.catch(() => undefined)
+  return run
+}
+
+/** 一時的な失敗に備えて、少し待って1回だけやり直す */
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch {
+    await new Promise((r) => setTimeout(r, 800))
+    return fn()
+  }
+}
+
 export interface Tip { id: string; price: string; amount: number }
 
 export async function loadTips(): Promise<Tip[]> {
   if (!isNative) return []
   try {
-    const { isBillingSupported } = await NativePurchases.isBillingSupported()
+    const { isBillingSupported } = await billing(() => NativePurchases.isBillingSupported())
     if (!isBillingSupported) return []
-    const { products } = await NativePurchases.getProducts({ productIdentifiers: TIP_IDS, productType: PURCHASE_TYPE.INAPP })
+    const { products } = await withRetry(() => billing(() => NativePurchases.getProducts({ productIdentifiers: TIP_IDS, productType: PURCHASE_TYPE.INAPP })))
     return products
       .map((p) => ({ id: p.identifier, price: p.priceString, amount: p.price }))
       .sort((a, b) => a.amount - b.amount)
@@ -66,7 +88,7 @@ export async function loadTips(): Promise<Tip[]> {
 /** true=完了 / false=キャンセル・失敗 */
 export async function buyTip(id: string): Promise<boolean> {
   try {
-    await NativePurchases.purchaseProduct({ productIdentifier: id, productType: PURCHASE_TYPE.INAPP, isConsumable: true })
+    await billing(() => NativePurchases.purchaseProduct({ productIdentifier: id, productType: PURCHASE_TYPE.INAPP, isConsumable: true }))
     return true
   } catch {
     return false
@@ -82,7 +104,7 @@ export interface Monthly { price: string; offerToken?: string }
 export async function loadMonthly(): Promise<Monthly | null> {
   if (!isNative) return null
   try {
-    const { products } = await NativePurchases.getProducts({ productIdentifiers: [MONTHLY_ID], productType: PURCHASE_TYPE.SUBS })
+    const { products } = await withRetry(() => billing(() => NativePurchases.getProducts({ productIdentifiers: [MONTHLY_ID], productType: PURCHASE_TYPE.SUBS })))
     const p = products.find((x) => x.identifier === MONTHLY_PLAN) ?? products[0]
     return p ? { price: p.priceString, offerToken: p.offerToken } : null
   } catch {
@@ -94,7 +116,7 @@ export async function loadMonthly(): Promise<Monthly | null> {
 export async function monthlyActive(): Promise<boolean> {
   if (!isNative) return false
   try {
-    const { purchases } = await NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS })
+    const { purchases } = await withRetry(() => billing(() => NativePurchases.getPurchases({ productType: PURCHASE_TYPE.SUBS })))
     return purchases.some((t) => t.productIdentifier === MONTHLY_ID && (t.purchaseState === undefined || t.purchaseState === '1'))
   } catch {
     return false
@@ -103,7 +125,7 @@ export async function monthlyActive(): Promise<boolean> {
 
 export async function buyMonthly(m: Monthly): Promise<boolean> {
   try {
-    await NativePurchases.purchaseProduct({ productIdentifier: MONTHLY_ID, planIdentifier: MONTHLY_PLAN, offerToken: m.offerToken, productType: PURCHASE_TYPE.SUBS })
+    await billing(() => NativePurchases.purchaseProduct({ productIdentifier: MONTHLY_ID, planIdentifier: MONTHLY_PLAN, offerToken: m.offerToken, productType: PURCHASE_TYPE.SUBS }))
     return true
   } catch {
     return false
@@ -112,7 +134,7 @@ export async function buyMonthly(m: Monthly): Promise<boolean> {
 
 /** Google Play の定期購入の管理画面（解約もここ） */
 export async function manageMonthly() {
-  await NativePurchases.manageSubscriptions().catch(() =>
+  await billing(() => NativePurchases.manageSubscriptions()).catch(() =>
     AppLauncher.openUrl({ url: `https://play.google.com/store/account/subscriptions?sku=${MONTHLY_ID}&package=${APP_ID}` }).catch(() => {}),
   )
 }
