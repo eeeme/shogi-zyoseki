@@ -207,7 +207,6 @@ export default function App() {
         setFolderId={setFolderId}
         onOpen={(b) => setScreen({ kind: 'explore', bookId: b.id, nodeId: b.rootId })}
         onOpenAt={(b, nodeId) => setScreen({ kind: 'explore', bookId: b.id, nodeId })}
-        onDrill={(b) => setScreen({ kind: 'drill', bookId: b.id, nodeId: b.rootId })}
         onNew={() => {
           const name = prompt('名前', '新しい定跡')
           if (!name?.trim()) return
@@ -276,7 +275,6 @@ interface HomeProps {
   setFolderId: (id: string | null) => void
   onOpen: (b: Book) => void
   onOpenAt: (b: Book, nodeId: string) => void
-  onDrill: (b: Book) => void
   onNew: () => void
   onEditor: () => void
   onSearch: () => void
@@ -444,7 +442,6 @@ function Home(p: HomeProps) {
                 </span>
               </button>
               <div className="book-actions">
-                <button className="btn small primary" onClick={() => p.onDrill(b)}>練習</button>
                 <button className="btn small ghost" onClick={() => bookMenu(b)} aria-label="メニュー">⋯</button>
               </div>
             </li>
@@ -458,8 +455,7 @@ function Home(p: HomeProps) {
           steps={[
             { title: '定跡帳へようこそ', text: '定跡を「本」として記録し、分岐をたどって覚えるアプリです。まずは使い方を少しだけ案内します。' },
             { sel: '[data-tour="new"]', title: '本を作る', text: '初手から指して作る、盤面を並べて作る、棋譜を貼り付けて作る、フォルダを作る、がここにまとまっています。' },
-            { sel: '.books .book:not(.folder) .book-main', title: '本を開く', text: 'タップすると盤が開き、手順を進めたり戻したりして確認できます。サンプルの本を用意してあります。' },
-            { sel: '.books .book:not(.folder) .btn.primary', title: '練習', text: '相手の手は自動で指され、あなたの番で定跡の手を答えます。間違えた局面は後日また出題されます。' },
+            { sel: '.books .book:not(.folder) .book-main', title: '本を開く', text: 'タップすると盤が開き、手順を進めたり戻したりして確認できます。練習もこの中から始められます。サンプルの本を用意してあります。' },
             { sel: '.books .book:not(.folder) [aria-label="メニュー"]', title: '本のメニュー', text: '名前の変更、タグ、対局情報、フォルダへの移動、削除ができます。' },
             { sel: '[aria-label="局面検索"]', title: '局面検索', text: '盤面を並べて、同じ局面や似た局面がどの本に出てくるかを探せます。' },
             { sel: '[aria-label="使い方"]', title: '使い方をもう一度', text: 'この案内はいつでもここからもう一度見られます。' },
